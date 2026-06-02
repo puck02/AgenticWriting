@@ -51,6 +51,22 @@ describe("processOcrUpload", () => {
     });
     expect(result.normalizedText).toBe("This is a sentence.\n\nSecond paragraph.");
   });
+
+  it("rejects oversized image files", async () => {
+    const largeFile = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "large.png", {
+      type: "image/png"
+    });
+
+    await expect(
+      processOcrUpload({
+        db: createDb(),
+        userId: "user-1",
+        purpose: "PROMPT",
+        file: largeFile,
+        adapter: { recognize: vi.fn() }
+      })
+    ).rejects.toThrow("Image uploads must be 5MB or smaller");
+  });
 });
 
 function createDb() {
