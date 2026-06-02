@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { rejectLabels, type RejectLabelValue } from "@/domain/labels";
 
-type FeedbackStatus = "idle" | "accepted" | "rejected" | "error";
+type FeedbackStatus = "idle" | "accepted" | "rejected";
 
 export function SuggestionCard({
   essayId,
@@ -33,6 +33,7 @@ export function SuggestionCard({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const hasSavedFeedback = status === "accepted" || status === "rejected";
 
   async function submitFeedback({
     nextAccepted,
@@ -61,7 +62,6 @@ export function SuggestionCard({
 
       setStatus(nextAccepted ? "accepted" : "rejected");
     } catch (feedbackError) {
-      setStatus("error");
       setError(
         feedbackError instanceof Error ? feedbackError.message : "反馈保存失败"
       );
@@ -105,7 +105,7 @@ export function SuggestionCard({
           <button
             type="button"
             onClick={() => submitFeedback({ nextAccepted: true })}
-            disabled={isSubmitting}
+            disabled={isSubmitting || hasSavedFeedback}
             className="min-h-10 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
             采纳
@@ -116,7 +116,7 @@ export function SuggestionCard({
               onChange={(event) =>
                 setSelectedRejectLabel(event.target.value as RejectLabelValue)
               }
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasSavedFeedback}
               className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
             >
               {rejectLabels.map((label) => (
@@ -133,7 +133,7 @@ export function SuggestionCard({
                   nextRejectLabel: selectedRejectLabel
                 })
               }
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasSavedFeedback}
               className="min-h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
             >
               不采纳
@@ -143,12 +143,12 @@ export function SuggestionCard({
         <p className="text-sm text-slate-600">
           {isSubmitting
             ? "正在保存反馈..."
-            : status === "accepted"
-              ? "已采纳，表达会进入个人表达库。"
-              : status === "rejected"
-                ? "已记录不采纳原因。"
-                : status === "error"
-                  ? error
+            : error
+              ? error
+              : status === "accepted"
+                ? "已采纳，表达会进入个人表达库。"
+                : status === "rejected"
+                  ? "已记录不采纳原因。"
                   : "选择后会更新你的写作画像。"}
         </p>
       </div>

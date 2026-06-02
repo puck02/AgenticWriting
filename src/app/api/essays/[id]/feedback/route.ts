@@ -4,6 +4,7 @@ import { z } from "zod";
 import { rejectLabels } from "@/domain/labels";
 import { db } from "@/lib/db";
 import { canAccessUserResource, getOrCreateCurrentUser } from "@/lib/session";
+import { recordSuggestionResponse } from "@/services/feedback/feedback-service";
 
 const rejectLabelValues = rejectLabels.map((rejectLabel) => rejectLabel.value) as [
   (typeof rejectLabels)[number]["value"],
@@ -53,27 +54,13 @@ export async function POST(
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  await db.$transaction(async (tx) => {
-    await tx.reviewSuggestion.update({
-      where: { id: suggestionId },
-      data: {
-        accepted,
-        rejectLabel: accepted ? null : rejectLabel
-      }
-    });
-
-    if (accepted) {
-      await tx.expressionAsset.create({
-        data: {
-          userId: user.id,
-          essayType: suggestion.essay.type,
-          topic: suggestion.topic,
-          expressionIntent: suggestion.expressionIntent,
-          originalSentence: suggestion.originalSentence,
-          optimizedSentence: suggestion.suggestedSentence
-        }
-      });
-    }
+  await recordSuggestionResponse({
+    db,
+    userId: user.id,
+    essayType: suggestion.essay.type,
+    suggestion,
+    accepted,
+    rejectLabel
   });
 
   return NextResponse.json({ ok: true });

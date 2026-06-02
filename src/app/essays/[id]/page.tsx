@@ -4,7 +4,7 @@ import { AppNav } from "@/components/AppNav";
 import { SuggestionCard } from "@/components/SuggestionCard";
 import { essayTypes } from "@/domain/labels";
 import { db } from "@/lib/db";
-import { canAccessUserResource, getOrCreateCurrentUser } from "@/lib/session";
+import { getOrCreateCurrentUser } from "@/lib/session";
 
 export default async function EssayDetailPage({
   params
@@ -13,8 +13,8 @@ export default async function EssayDetailPage({
 }) {
   const { id } = await params;
   const user = await getOrCreateCurrentUser(db);
-  const essay = await db.essay.findUnique({
-    where: { id },
+  const essay = await db.essay.findFirst({
+    where: { id, userId: user.id },
     include: {
       suggestions: {
         orderBy: { createdAt: "asc" }
@@ -22,13 +22,7 @@ export default async function EssayDetailPage({
     }
   });
 
-  if (
-    !essay ||
-    !canAccessUserResource({
-      currentUserId: user.id,
-      resourceUserId: essay.userId
-    })
-  ) {
+  if (!essay) {
     notFound();
   }
 
