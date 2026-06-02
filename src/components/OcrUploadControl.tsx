@@ -1,8 +1,6 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent } from "react";
-
-import { IslandButton } from "@/components/IslandUi";
+import { useState, type ChangeEvent } from "react";
 
 type OcrPurpose = "PROMPT" | "CONTENT";
 type OcrUploadStatus = "idle" | "uploading" | "ready" | "failed";
@@ -16,7 +14,6 @@ export function OcrUploadControl({
   label: string;
   onRecognized(text: string): void;
 }) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState<OcrUploadStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
 
@@ -61,21 +58,21 @@ export function OcrUploadControl({
 
   return (
     <div className="space-y-2">
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <IslandButton
-        type="button"
-        size="small"
-        onClick={() => inputRef.current?.click()}
-        disabled={status === "uploading"}
+      <label
+        className={[
+          "island-button island-button-default island-button-small overflow-hidden",
+          status === "uploading" ? "cursor-not-allowed opacity-55" : "cursor-pointer"
+        ].join(" ")}
       >
-        {status === "uploading" ? "识别中..." : label}
-      </IslandButton>
+        <input
+          type="file"
+          accept="image/*"
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          disabled={status === "uploading"}
+          onChange={handleFileChange}
+        />
+        <span>{status === "uploading" ? "识别中..." : label}</span>
+      </label>
       {message ? (
         <p
           className={

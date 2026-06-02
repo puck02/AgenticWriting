@@ -4,6 +4,21 @@ import { describe, expect, it, vi } from "vitest";
 import { OcrUploadControl } from "@/components/OcrUploadControl";
 
 describe("OcrUploadControl", () => {
+  it("renders an accessible image file input behind the upload control", () => {
+    render(
+      <OcrUploadControl
+        purpose="PROMPT"
+        label="上传题目图片识别"
+        onRecognized={vi.fn()}
+      />
+    );
+
+    const input = screen.getByLabelText("上传题目图片识别") as HTMLInputElement;
+
+    expect(input.type).toBe("file");
+    expect(input.accept).toBe("image/*");
+  });
+
   it("uploads an image and returns recognized text", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -22,7 +37,7 @@ describe("OcrUploadControl", () => {
       />
     );
 
-    const input = document.querySelector("input[type='file']") as HTMLInputElement;
+    const input = screen.getByLabelText("上传正文图片识别") as HTMLInputElement;
     fireEvent.change(input, {
       target: {
         files: [new File(["fake-image"], "essay.png", { type: "image/png" })]
