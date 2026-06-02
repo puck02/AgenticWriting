@@ -7,11 +7,17 @@ type FeedbackSuggestion = {
   expressionIntent: string;
   originalSentence: string;
   suggestedSentence: string;
-  accepted: boolean | null;
 };
 
 type FeedbackTransaction = {
   reviewSuggestion: {
+    updateMany(args: {
+      where: {
+        id: string;
+        OR: [{ accepted: null }, { accepted: boolean }];
+      };
+      data: { accepted: boolean; rejectLabel: RejectLabelValue | null };
+    }): Promise<{ count: number }>;
     update(args: {
       where: { id: string };
       data: { accepted: boolean; rejectLabel: RejectLabelValue | null };
@@ -57,8 +63,8 @@ type FeedbackTransaction = {
         rejectCount: number;
       };
       update:
-        | { acceptCount: { increment: number } }
-        | { rejectCount: { increment: number } };
+        | { acceptCount: { increment: number }; deletedAt: null }
+        | { rejectCount: { increment: number }; deletedAt: null };
     }): Promise<unknown>;
   };
 };
@@ -89,35 +95,53 @@ export async function recordSuggestionResponse({
   }
 
   return db.$transaction(async (tx) => {
-    await tx.reviewSuggestion.update({
-      where: { id: suggestion.id },
+    const stateChange = await tx.reviewSuggestion.updateMany({
+      where: {
+        id: suggestion.id,
+        OR: [{ accepted: null }, { accepted: !accepted }]
+      },
       data: {
         accepted,
         rejectLabel: accepted ? null : (rejectLabel ?? null)
       }
     });
 
-    if (suggestion.accepted !== accepted) {
-      await tx.writingPreference.upsert({
-        where: {
-          userId_label_essayType: {
-            userId,
-            label: suggestion.preferenceLabel,
-            essayType
-          }
-        },
-        create: {
+    if (stateChange.count === 0) {
+      await tx.reviewSuggestion.update({
+        where: { id: suggestion.id },
+        data: {
+          accepted,
+          rejectLabel: accepted ? null : (rejectLabel ?? null)
+        }
+      });
+      return;
+    }
+
+    await tx.writingPreference.upsert({
+      where: {
+        userId_label_essayType: {
           userId,
           label: suggestion.preferenceLabel,
-          essayType,
-          acceptCount: accepted ? 1 : 0,
-          rejectCount: accepted ? 0 : 1
-        },
-        update: accepted
-          ? { acceptCount: { increment: 1 } }
-          : { rejectCount: { increment: 1 } }
-      });
-    }
+          essayType
+        }
+      },
+      create: {
+        userId,
+        label: suggestion.preferenceLabel,
+        essayType,
+        acceptCount: accepted ? 1 : 0,
+        rejectCount: accepted ? 0 : 1
+      },
+      update: accepted
+        ? {
+            acceptCount: { increment: 1 },
+            deletedAt: null
+          }
+        : {
+            rejectCount: { increment: 1 },
+            deletedAt: null
+          }
+    });
 
     if (!accepted) {
       return;
