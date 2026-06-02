@@ -1,0 +1,82 @@
+import type { Prisma } from "@prisma/client";
+
+import type { EssayTypeValue } from "@/domain/labels";
+import type { ReviewResult } from "@/domain/review-schema";
+
+type EssayDb<EssayResult> = {
+  essay: {
+    create(args: Prisma.EssayCreateArgs): Promise<EssayResult>;
+  };
+  errorPattern: {
+    upsert(args: Prisma.ErrorPatternUpsertArgs): Promise<unknown>;
+  };
+};
+
+export async function saveReviewedEssay<EssayResult>({
+  db,
+  userId,
+  essayType,
+  prompt,
+  content,
+  review
+}: {
+  db: EssayDb<EssayResult>;
+  userId: string;
+  essayType: EssayTypeValue;
+  prompt: string;
+  content: string;
+  review: ReviewResult;
+}): Promise<EssayResult> {
+  const essay = await db.essay.create({
+    data: {
+      userId,
+      type: essayType,
+      prompt,
+      content,
+      overallScore: review.overallScore,
+      reviewSummary: review.summary,
+      suggestions: {
+        create: review.suggestions.map((suggestion) => ({
+          originalSentence: suggestion.originalSentence,
+          suggestedSentence: suggestion.suggestedSentence,
+          reason: suggestion.reason,
+          preferenceLabel: suggestion.preferenceLabel,
+          expressionIntent: suggestion.expressionIntent,
+          topic: suggestion.topic,
+          profileExplanation: suggestion.profileExplanation
+        }))
+      }
+    },
+    include: {
+      suggestions: true
+    }
+  });
+
+  await Promise.all(
+    review.errorPatterns.map((label) =>
+      db.errorPattern.upsert({
+        where: {
+          userId_label_essayType: {
+            userId,
+            label,
+            essayType
+          }
+        },
+        create: {
+          userId,
+          label,
+          essayType,
+          count: 1
+        },
+        update: {
+          count: {
+            increment: 1
+          },
+          deletedAt: null
+        }
+      })
+    )
+  );
+
+  return essay;
+}
