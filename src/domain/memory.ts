@@ -6,14 +6,14 @@ export type MemorySnapshot = {
     label: string;
     acceptCount: number;
     rejectCount: number;
-    essayType: EssayTypeValue | null;
+    essayType: EssayTypeValue;
     deletedAt?: Date | null;
   }>;
   errorPatterns: Array<{
     id: string;
     label: string;
     count: number;
-    essayType: EssayTypeValue | null;
+    essayType: EssayTypeValue;
     deletedAt?: Date | null;
   }>;
   expressions: Array<{
