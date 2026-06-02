@@ -27,14 +27,22 @@ export type MemorySnapshot = {
   }>;
 };
 
-export type SuggestionFeedback = {
+type BaseSuggestionFeedback = {
   userId: string;
   essayType: EssayTypeValue;
-  accepted: boolean;
-  rejectLabel?: RejectLabelValue;
   preferenceLabel: string;
   originalSentence: string;
   optimizedSentence: string;
   topic: string;
   expressionIntent: string;
 };
+
+export type SuggestionFeedback =
+  | (BaseSuggestionFeedback & {
+      accepted: true;
+      rejectLabel?: never;
+    })
+  | (BaseSuggestionFeedback & {
+      accepted: false;
+      rejectLabel: RejectLabelValue;
+    });
