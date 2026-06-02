@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { reviewResultSchema } from "@/domain/review-schema";
+import type { MemorySnapshot } from "@/domain/memory";
+import { DeterministicReviewer } from "@/services/review/llm-reviewer";
 
 const completeReviewResult = {
   overallScore: 17,
@@ -68,4 +70,59 @@ describe("reviewResultSchema", () => {
       })
     ).toThrow();
   });
+
+  it("allows profile explanation to be omitted", () => {
+    const [{ profileExplanation, ...suggestion }] =
+      completeReviewResult.suggestions;
+
+    expect(
+      reviewResultSchema.parse({
+        ...completeReviewResult,
+        suggestions: [suggestion]
+      }).suggestions[0].profileExplanation
+    ).toBeUndefined();
+  });
+
+  it("rejects an empty profile explanation when present", () => {
+    expect(() =>
+      reviewResultSchema.parse({
+        ...completeReviewResult,
+        suggestions: [
+          {
+            ...completeReviewResult.suggestions[0],
+            profileExplanation: ""
+          }
+        ]
+      })
+    ).toThrow();
+  });
+
+  it("parses deterministic reviewer output when memory contains an empty preference label", async () => {
+    const reviewer = new DeterministicReviewer();
+    const result = await reviewer.reviewEssay({
+      essayType: "ENGLISH_ONE_PICTURE",
+      prompt: "环境保护",
+      content: "People should protect the environment.",
+      memory: memoryWithEmptyPreferenceLabel()
+    });
+
+    expect(() => reviewResultSchema.parse(result)).not.toThrow();
+    expect(result.suggestions[0].preferenceLabel).toBe("正式但不过度复杂");
+  });
 });
+
+function memoryWithEmptyPreferenceLabel(): MemorySnapshot {
+  return {
+    preferences: [
+      {
+        id: "preference-1",
+        label: "",
+        acceptCount: 1,
+        rejectCount: 0,
+        essayType: "ENGLISH_ONE_PICTURE"
+      }
+    ],
+    errorPatterns: [],
+    expressions: []
+  };
+}

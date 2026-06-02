@@ -15,8 +15,10 @@ export interface LlmReviewer {
 
 export class DeterministicReviewer implements LlmReviewer {
   async reviewEssay(request: ReviewRequest): Promise<ReviewResult> {
-    const preferenceLabel =
-      request.memory.preferences[0]?.label ?? "正式但不过度复杂";
+    const preferenceLabel = nonEmptyOrDefault(
+      request.memory.preferences[0]?.label,
+      "正式但不过度复杂"
+    );
     const originalSentence = inferFirstSentence(request.content);
     const topic = inferTopic(request.prompt);
 
@@ -44,6 +46,14 @@ export class DeterministicReviewer implements LlmReviewer {
       ]
     };
   }
+}
+
+function nonEmptyOrDefault(value: string | undefined, fallback: string): string {
+  const normalizedValue = value?.trim();
+
+  return normalizedValue && normalizedValue.length > 0
+    ? normalizedValue
+    : fallback;
 }
 
 function inferFirstSentence(content: string): string {
