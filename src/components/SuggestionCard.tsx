@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { IslandButton, IslandCard, IslandSelect } from "@/components/IslandUi";
 import { rejectLabels, type RejectLabelValue } from "@/domain/labels";
 
 type FeedbackStatus = "idle" | "accepted" | "rejected";
@@ -71,61 +72,60 @@ export function SuggestionCard({
   }
 
   return (
-    <article className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+    <IslandCard className="p-4 sm:p-5">
       <div className="grid gap-3 lg:grid-cols-2">
-        <div className="rounded-md bg-slate-50 p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-normal text-slate-500">
+        <div className="rounded-[18px] bg-[#fffdf4] p-3">
+          <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#9a835a]">
             原句
           </p>
-          <p className="text-sm leading-6 text-slate-800">{originalSentence}</p>
+          <p className="text-sm leading-6 text-[#3f3426]">{originalSentence}</p>
         </div>
-        <div className="rounded-md border border-sky-100 bg-sky-50 p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-normal text-sky-700">
+        <div className="rounded-[18px] border-2 border-[#82d5bb]/35 bg-[#82d5bb]/15 p-3">
+          <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#14866d]">
             建议表达
           </p>
-          <p className="text-sm leading-6 text-slate-950">{suggestedSentence}</p>
+          <p className="text-sm leading-6 text-[#3f3426]">{suggestedSentence}</p>
         </div>
       </div>
 
-      <div className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
+      <div className="mt-4 space-y-2 text-sm leading-6 text-[#725d42]">
         <p>
-          <span className="font-semibold text-slate-900">修改理由：</span>
+          <span className="font-black text-[#3f3426]">修改理由：</span>
           {reason}
         </p>
         {profileExplanation ? (
           <p>
-            <span className="font-semibold text-slate-900">画像说明：</span>
+            <span className="font-black text-[#3f3426]">画像说明：</span>
             {profileExplanation}
           </p>
         ) : null}
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 md:flex-row md:items-center md:justify-between">
+      <div className="mt-4 flex flex-col gap-3 border-t-2 border-[#725d42]/10 pt-4 md:flex-row md:items-center md:justify-between">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <button
+          <IslandButton
             type="button"
+            variant="primary"
             onClick={() => submitFeedback({ nextAccepted: true })}
             disabled={isSubmitting || hasSavedFeedback}
-            className="min-h-10 rounded-md bg-emerald-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-slate-400"
           >
             采纳
-          </button>
+          </IslandButton>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <select
+            <IslandSelect
               value={selectedRejectLabel}
               onChange={(event) =>
                 setSelectedRejectLabel(event.target.value as RejectLabelValue)
               }
               disabled={isSubmitting || hasSavedFeedback}
-              className="min-h-10 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
             >
               {rejectLabels.map((label) => (
                 <option key={label.value} value={label.value}>
                   {label.label}
                 </option>
               ))}
-            </select>
-            <button
+            </IslandSelect>
+            <IslandButton
               type="button"
               onClick={() =>
                 submitFeedback({
@@ -134,13 +134,12 @@ export function SuggestionCard({
                 })
               }
               disabled={isSubmitting || hasSavedFeedback}
-              className="min-h-10 rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
             >
               不采纳
-            </button>
+            </IslandButton>
           </div>
         </div>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-[#725d42]">
           {isSubmitting
             ? "正在保存反馈..."
             : error
@@ -152,6 +151,6 @@ export function SuggestionCard({
                   : "选择后会更新你的写作画像。"}
         </p>
       </div>
-    </article>
+    </IslandCard>
   );
 }
