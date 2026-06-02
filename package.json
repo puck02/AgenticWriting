@@ -8,7 +8,7 @@
     "start": "next start",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },
@@ -29,7 +29,7 @@
     "autoprefixer": "latest",
     "jsdom": "latest",
     "postcss": "latest",
-    "tailwindcss": "latest",
+    "tailwindcss": "^3.4.17",
     "typescript": "latest",
     "vitest": "latest"
   }
