@@ -29,6 +29,9 @@ function createDb(overrides?: {
     },
     writingPreference: {
       upsert: vi.fn().mockResolvedValue({})
+    },
+    memoryEvent: {
+      create: vi.fn().mockResolvedValue({})
     }
   };
   const db = {
@@ -80,6 +83,19 @@ describe("recordSuggestionResponse", () => {
         deletedAt: null
       }
     });
+    expect(tx.memoryEvent.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        eventType: "SUGGESTION_ACCEPTED",
+        suggestionId: "suggestion-1",
+        essayType: "ENGLISH_ONE_PICTURE",
+        label: "句式更有判断力",
+        payload: expect.objectContaining({
+          topic: "reading",
+          expressionIntent: "说明阅读价值"
+        })
+      }
+    });
   });
 
   it("does not run preference or expression side effects when the suggestion state is unchanged in the transaction", async () => {
@@ -116,6 +132,7 @@ describe("recordSuggestionResponse", () => {
     expect(tx.writingPreference.upsert).not.toHaveBeenCalled();
     expect(tx.expressionAsset.findFirst).not.toHaveBeenCalled();
     expect(tx.expressionAsset.create).not.toHaveBeenCalled();
+    expect(tx.memoryEvent.create).not.toHaveBeenCalled();
   });
 
   it("requires a reject label before recording rejected feedback", async () => {
@@ -180,6 +197,20 @@ describe("recordSuggestionResponse", () => {
     });
     expect(tx.expressionAsset.findFirst).not.toHaveBeenCalled();
     expect(tx.expressionAsset.create).not.toHaveBeenCalled();
+    expect(tx.memoryEvent.create).toHaveBeenCalledWith({
+      data: {
+        userId: "user-1",
+        eventType: "SUGGESTION_REJECTED",
+        suggestionId: "suggestion-1",
+        essayType: "ENGLISH_ONE_PICTURE",
+        label: "句式更有判断力",
+        payload: expect.objectContaining({
+          topic: "reading",
+          expressionIntent: "说明阅读价值",
+          rejectLabel: "NOT_MY_STYLE"
+        })
+      }
+    });
   });
 
   it("increments only accept count when feedback changes from rejected to accepted", async () => {

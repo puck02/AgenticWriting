@@ -67,6 +67,24 @@ type FeedbackTransaction = {
         | { rejectCount: { increment: number }; deletedAt: null };
     }): Promise<unknown>;
   };
+  memoryEvent: {
+    create(args: {
+      data: {
+        userId: string;
+        eventType: "SUGGESTION_ACCEPTED" | "SUGGESTION_REJECTED";
+        suggestionId: string;
+        essayType: EssayTypeValue;
+        label: string;
+        payload: {
+          topic: string;
+          expressionIntent: string;
+          originalSentence: string;
+          suggestedSentence: string;
+          rejectLabel: RejectLabelValue | null;
+        };
+      };
+    }): Promise<unknown>;
+  };
 };
 
 type FeedbackDb = {
@@ -141,6 +159,23 @@ export async function recordSuggestionResponse({
             rejectCount: { increment: 1 },
             deletedAt: null
           }
+    });
+
+    await tx.memoryEvent.create({
+      data: {
+        userId,
+        eventType: accepted ? "SUGGESTION_ACCEPTED" : "SUGGESTION_REJECTED",
+        suggestionId: suggestion.id,
+        essayType,
+        label: suggestion.preferenceLabel,
+        payload: {
+          topic: suggestion.topic,
+          expressionIntent: suggestion.expressionIntent,
+          originalSentence: suggestion.originalSentence,
+          suggestedSentence: suggestion.suggestedSentence,
+          rejectLabel: accepted ? null : (rejectLabel ?? null)
+        }
+      }
     });
 
     if (!accepted) {
