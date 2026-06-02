@@ -1,0 +1,100 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String            @id @default(cuid())
+  email            String            @unique
+  createdAt        DateTime          @default(now())
+  essays           Essay[]
+  preferences      WritingPreference[]
+  errorPatterns    ErrorPattern[]
+  expressionAssets ExpressionAsset[]
+}
+
+model Essay {
+  id            String             @id @default(cuid())
+  userId        String
+  type          EssayType
+  prompt        String
+  content       String
+  overallScore  Int?
+  reviewSummary String?
+  createdAt     DateTime           @default(now())
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  suggestions   ReviewSuggestion[]
+}
+
+model ReviewSuggestion {
+  id                 String       @id @default(cuid())
+  essayId            String
+  originalSentence   String
+  suggestedSentence  String
+  reason             String
+  preferenceLabel    String
+  expressionIntent   String
+  topic              String
+  profileExplanation String?
+  accepted           Boolean?
+  rejectLabel        RejectLabel?
+  createdAt          DateTime     @default(now())
+  essay              Essay        @relation(fields: [essayId], references: [id], onDelete: Cascade)
+}
+
+model WritingPreference {
+  id          String     @id @default(cuid())
+  userId      String
+  label       String
+  acceptCount Int        @default(0)
+  rejectCount Int        @default(0)
+  essayType   EssayType?
+  deletedAt   DateTime?
+  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime   @default(now())
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ErrorPattern {
+  id        String     @id @default(cuid())
+  userId    String
+  label     String
+  count     Int        @default(1)
+  essayType EssayType?
+  deletedAt DateTime?
+  updatedAt DateTime   @updatedAt
+  createdAt DateTime   @default(now())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ExpressionAsset {
+  id                String    @id @default(cuid())
+  userId            String
+  essayType         EssayType
+  topic             String
+  expressionIntent  String
+  originalSentence  String
+  optimizedSentence String
+  reuseCount        Int       @default(0)
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum EssayType {
+  ENGLISH_ONE_PICTURE
+  ENGLISH_TWO_CHART
+  SMALL_APPLICATION
+}
+
+enum RejectLabel {
+  TOO_COMPLEX
+  NOT_MY_STYLE
+  MEANING_CHANGED
+  NOT_EXAM_STYLE
+  PREFER_ORIGINAL
+  UNFAMILIAR_WORDS
+}
