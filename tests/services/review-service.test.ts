@@ -149,13 +149,17 @@ describe("saveReviewedEssay", () => {
       reviewSummary: "文章结构完整，表达清晰。",
       suggestions: validReview.suggestions
     };
-    const db = {
+    const tx = {
       essay: {
         create: vi.fn().mockResolvedValue(createdEssay)
       },
       errorPattern: {
         upsert: vi.fn().mockResolvedValue({})
       }
+    };
+    const db = {
+      ...tx,
+      $transaction: vi.fn(async (callback) => callback(tx))
     };
 
     const essay = await saveReviewedEssay({
@@ -168,7 +172,8 @@ describe("saveReviewedEssay", () => {
     });
 
     expect(essay).toBe(createdEssay);
-    expect(db.essay.create).toHaveBeenCalledWith({
+    expect(db.$transaction).toHaveBeenCalledOnce();
+    expect(tx.essay.create).toHaveBeenCalledWith({
       data: {
         userId: "user-1",
         type: "ENGLISH_ONE_PICTURE",
@@ -195,7 +200,7 @@ describe("saveReviewedEssay", () => {
         suggestions: true
       }
     });
-    expect(db.errorPattern.upsert).toHaveBeenCalledWith({
+    expect(tx.errorPattern.upsert).toHaveBeenCalledWith({
       where: {
         userId_label_essayType: {
           userId: "user-1",
@@ -216,5 +221,39 @@ describe("saveReviewedEssay", () => {
         deletedAt: null
       }
     });
+  });
+
+  it("uses a transaction client for essay and error pattern writes", async () => {
+    const tx = {
+      essay: {
+        create: vi.fn().mockResolvedValue({ id: "essay-1" })
+      },
+      errorPattern: {
+        upsert: vi.fn().mockResolvedValue({})
+      }
+    };
+    const db = {
+      essay: {
+        create: vi.fn().mockRejectedValue(new Error("root essay create should not be called"))
+      },
+      errorPattern: {
+        upsert: vi.fn().mockRejectedValue(new Error("root upsert should not be called"))
+      },
+      $transaction: vi.fn(async (callback) => callback(tx))
+    };
+
+    await saveReviewedEssay({
+      db,
+      userId: "user-1",
+      essayType: "ENGLISH_ONE_PICTURE",
+      prompt: "读书的重要性",
+      content: "People should read more books.",
+      review: validReview
+    });
+
+    expect(db.essay.create).not.toHaveBeenCalled();
+    expect(db.errorPattern.upsert).not.toHaveBeenCalled();
+    expect(tx.essay.create).toHaveBeenCalledOnce();
+    expect(tx.errorPattern.upsert).toHaveBeenCalledOnce();
   });
 });
