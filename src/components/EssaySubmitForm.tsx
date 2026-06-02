@@ -9,6 +9,7 @@ import {
   IslandGlyph,
   IslandSelect
 } from "@/components/IslandUi";
+import { OcrUploadControl } from "@/components/OcrUploadControl";
 import { essayTypes, type EssayTypeValue } from "@/domain/labels";
 
 export function EssaySubmitForm() {
@@ -84,6 +85,13 @@ export function EssaySubmitForm() {
             <IslandGlyph label="题目">P</IslandGlyph>
             作文题目
           </label>
+          <div className="mb-3">
+            <OcrUploadControl
+              purpose="PROMPT"
+              label="上传题目图片识别"
+              onRecognized={(text) => setPrompt(text)}
+            />
+          </div>
           <textarea
             id="prompt"
             value={prompt}
@@ -103,6 +111,13 @@ export function EssaySubmitForm() {
             <IslandGlyph label="正文">E</IslandGlyph>
             作文正文
           </label>
+          <div className="mb-3">
+            <OcrUploadControl
+              purpose="CONTENT"
+              label="上传正文图片识别"
+              onRecognized={(text) => setContent(text)}
+            />
+          </div>
           <textarea
             id="content"
             value={content}
