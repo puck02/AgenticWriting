@@ -14,6 +14,9 @@ model User {
   preferences      WritingPreference[]
   errorPatterns    ErrorPattern[]
   expressionAssets ExpressionAsset[]
+  uploadAssets     UploadAsset[]
+  aiRuns           AiRun[]
+  memoryEvents     MemoryEvent[]
 }
 
 model Essay {
@@ -96,6 +99,92 @@ model ExpressionAsset {
 
   @@index([userId, essayType, deletedAt])
   @@index([userId, topic, expressionIntent])
+}
+
+model UploadAsset {
+  id             String        @id @default(cuid())
+  userId         String
+  purpose        UploadPurpose
+  fileName       String
+  mimeType       String
+  sizeBytes      Int
+  storageKey     String
+  ocrStatus      OcrStatus
+  rawText        String?
+  normalizedText String?
+  errorMessage   String?
+  createdAt      DateTime      @default(now())
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+  @@index([userId, ocrStatus])
+}
+
+model AiRun {
+  id            String      @id @default(cuid())
+  userId        String
+  agentType     AgentType
+  model         String
+  status        AiRunStatus
+  inputSummary  String
+  outputSummary String?
+  errorMessage  String?
+  latencyMs     Int?
+  createdAt     DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, agentType, createdAt])
+  @@index([userId, status])
+}
+
+model MemoryEvent {
+  id           String          @id @default(cuid())
+  userId       String
+  eventType    MemoryEventType
+  essayId      String?
+  suggestionId String?
+  essayType    EssayType?
+  label        String
+  payload      Json
+  createdAt    DateTime        @default(now())
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, eventType, createdAt])
+  @@index([userId, essayType, createdAt])
+}
+
+enum UploadPurpose {
+  PROMPT
+  CONTENT
+}
+
+enum OcrStatus {
+  PENDING
+  READY
+  FAILED
+}
+
+enum AgentType {
+  OCR
+  REVIEW
+  REVIEW_REPAIR
+  MEMORY_RETRIEVAL
+  MEMORY_UPDATE
+}
+
+enum AiRunStatus {
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum MemoryEventType {
+  SUGGESTION_ACCEPTED
+  SUGGESTION_REJECTED
+  ERROR_PATTERN_OBSERVED
+  EXPRESSION_ADDED
+  MEMORY_DELETED
+  MEMORY_RESTORED
 }
 
 enum EssayType {
