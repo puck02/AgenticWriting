@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
@@ -15,6 +15,11 @@ vi.mock("@/lib/session", () => ({
 
 import { POST } from "@/app/api/uploads/ocr/route";
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+  mocks.getOrCreateCurrentUser.mockReset();
+});
+
 describe("POST /api/uploads/ocr", () => {
   it("returns an OCR draft in development when the database is unavailable", async () => {
     mocks.getOrCreateCurrentUser.mockRejectedValueOnce(new Error("ECONNREFUSED"));
@@ -29,6 +34,16 @@ describe("POST /api/uploads/ocr", () => {
       rawText: expect.stringContaining("essay.png"),
       normalizedText: expect.stringContaining("essay.png")
     });
+  });
+
+  it("returns a JSON error when real OCR configuration is missing", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    const response = await POST(createUploadRequest());
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toContain("Real OCR requires");
   });
 });
 

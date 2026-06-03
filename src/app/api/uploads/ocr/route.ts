@@ -4,7 +4,7 @@ import { uploadPurposeSchema } from "@/domain/uploads";
 import { db } from "@/lib/db";
 import { getOrCreateCurrentUser } from "@/lib/session";
 import { createOcrAdapterFromEnv } from "@/services/ocr/ocr-adapter-factory";
-import { createOcrDraft, processOcrUpload } from "@/services/ocr/ocr-service";
+import { createOcrDraft, type OcrAdapter, processOcrUpload } from "@/services/ocr/ocr-service";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData().catch(() => null);
@@ -20,9 +20,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid upload payload" }, { status: 400 });
   }
 
-  const adapter = createOcrAdapterFromEnv();
+  let adapter: OcrAdapter | undefined;
 
   try {
+    adapter = createOcrAdapterFromEnv();
     const user = await getOrCreateCurrentUser(db);
     const result = await processOcrUpload({
       db,
@@ -34,6 +35,15 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (!adapter) {
+      return NextResponse.json(
+        {
+          error: getErrorMessage(error)
+        },
+        { status: 400 }
+      );
+    }
+
     if (process.env.NODE_ENV !== "production") {
       try {
         const result = await createOcrDraft({
