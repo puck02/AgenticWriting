@@ -7,12 +7,7 @@ import type { MemorySnapshot } from "@/domain/memory";
 import { db } from "@/lib/db";
 import { getOrCreateCurrentUser } from "@/lib/session";
 import { saveReviewedEssay } from "@/services/essay/essay-service";
-import {
-  DeterministicReviewer,
-  type LlmReviewer
-} from "@/services/review/llm-reviewer";
-import { FetchModelProvider } from "@/services/review/model-provider";
-import { ProductionReviewer } from "@/services/review/production-reviewer";
+import { createReviewerFromEnv } from "@/services/review/reviewer-factory";
 import { reviewEssayDraft } from "@/services/review/review-service";
 
 const essayTypeValues = essayTypes.map((essayType) => essayType.value) as [
@@ -38,7 +33,7 @@ export async function POST(request: NextRequest) {
   const { essayType, prompt, content } = parsedBody.data;
   const memory = await loadMemory(user.id);
   const review = await reviewEssayDraft({
-    reviewer: createReviewer(),
+    reviewer: createReviewerFromEnv(),
     essayType,
     prompt,
     content,
@@ -54,28 +49,6 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ essayId: essay.id });
-}
-
-function createReviewer(): LlmReviewer {
-  if (process.env.REVIEWER_MODE !== "production") {
-    return new DeterministicReviewer();
-  }
-
-  const endpoint = process.env.MODEL_API_ENDPOINT;
-  const baseUrl = process.env.MODEL_API_BASE_URL;
-  const apiKey = process.env.MODEL_API_KEY;
-  const model = process.env.MODEL_NAME;
-
-  if ((!endpoint && !baseUrl) || !apiKey || !model) {
-    throw new Error(
-      "Production reviewer requires MODEL_API_ENDPOINT or MODEL_API_BASE_URL, plus MODEL_API_KEY and MODEL_NAME"
-    );
-  }
-
-  return new ProductionReviewer({
-    model,
-    provider: new FetchModelProvider({ endpoint, baseUrl, apiKey, model })
-  });
 }
 
 async function loadMemory(userId: string): Promise<MemorySnapshot> {

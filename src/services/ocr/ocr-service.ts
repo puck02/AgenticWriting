@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 import type { UploadPurposeValue } from "@/domain/uploads";
 import { normalizeOcrText } from "@/services/ocr/text-normalizer";
+import type { ModelProvider } from "@/services/review/model-provider";
 
 const maxUploadBytes = 5 * 1024 * 1024;
 
@@ -30,6 +31,30 @@ export class MockOcrAdapter implements OcrAdapter {
     return {
       rawText: `Mock OCR result for ${file.name}. Replace this text after connecting a production OCR provider.`,
       confidence: 1
+    };
+  }
+}
+
+export class VisionOcrAdapter implements OcrAdapter {
+  constructor({ provider }: { provider: Pick<ModelProvider, "completeVisionText"> }) {
+    this.provider = provider;
+  }
+
+  private readonly provider: Pick<ModelProvider, "completeVisionText">;
+
+  async recognize(file: File): Promise<OcrResult> {
+    const rawText = await this.provider.completeVisionText({
+      file,
+      prompt: [
+        "Transcribe all visible English writing from this image.",
+        "Return plain text only.",
+        "Preserve paragraph breaks when they are visible.",
+        "Do not explain the image and do not add Markdown fences."
+      ].join(" ")
+    });
+
+    return {
+      rawText: rawText.trim()
     };
   }
 }

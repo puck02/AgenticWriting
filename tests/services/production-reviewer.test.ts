@@ -94,4 +94,37 @@ describe("FetchModelProvider", () => {
       })
     );
   });
+
+  it("sends image content to an OpenAI-compatible vision model", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: vi.fn().mockResolvedValue({
+        choices: [{ message: { content: "Transcribed essay text." } }]
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new FetchModelProvider({
+      baseUrl: "https://provider.example/v1",
+      apiKey: "test-key",
+      model: "vision-model"
+    });
+
+    const content = await provider.completeVisionText({
+      prompt: "Transcribe this image.",
+      file: new File(["fake-image"], "essay.png", { type: "image/png" })
+    });
+    const [, init] = fetchMock.mock.calls[0];
+    const body = JSON.parse(init.body);
+
+    expect(content).toBe("Transcribed essay text.");
+    expect(body.messages[0].content).toEqual([
+      { type: "text", text: "Transcribe this image." },
+      {
+        type: "image_url",
+        image_url: {
+          url: expect.stringMatching(/^data:image\/png;base64,/)
+        }
+      }
+    ]);
+  });
 });

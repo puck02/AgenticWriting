@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { processOcrUpload } from "@/services/ocr/ocr-service";
+import { processOcrUpload, VisionOcrAdapter } from "@/services/ocr/ocr-service";
 
 const imageFile = new File(["fake-image"], "essay.png", { type: "image/png" });
 
@@ -66,6 +66,23 @@ describe("processOcrUpload", () => {
         adapter: { recognize: vi.fn() }
       })
     ).rejects.toThrow("Image uploads must be 5MB or smaller");
+  });
+});
+
+describe("VisionOcrAdapter", () => {
+  it("transcribes image text through a vision provider", async () => {
+    const provider = {
+      completeVisionText: vi.fn().mockResolvedValue("  The essay text.  ")
+    };
+    const adapter = new VisionOcrAdapter({ provider });
+
+    const result = await adapter.recognize(imageFile);
+
+    expect(result.rawText).toBe("The essay text.");
+    expect(provider.completeVisionText).toHaveBeenCalledWith({
+      file: imageFile,
+      prompt: expect.stringContaining("Transcribe")
+    });
   });
 });
 

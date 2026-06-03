@@ -3,12 +3,12 @@ import type { LlmReviewer, ReviewRequest } from "@/services/review/llm-reviewer"
 import type { ModelProvider } from "@/services/review/model-provider";
 
 export class ProductionReviewer implements LlmReviewer {
-  constructor({ provider, model }: { provider: ModelProvider; model: string }) {
+  constructor({ provider, model }: { provider: Pick<ModelProvider, "completeJson">; model: string }) {
     this.provider = provider;
     this.model = model;
   }
 
-  private readonly provider: ModelProvider;
+  private readonly provider: Pick<ModelProvider, "completeJson">;
   private readonly model: string;
 
   async reviewEssay(request: ReviewRequest): Promise<ReviewResult> {

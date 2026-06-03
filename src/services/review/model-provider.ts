@@ -1,5 +1,11 @@
 export type ModelProvider = {
   completeJson(prompt: string): Promise<string>;
+  completeVisionText(input: VisionTextInput): Promise<string>;
+};
+
+export type VisionTextInput = {
+  prompt: string;
+  file: File;
 };
 
 export class FetchModelProvider implements ModelProvider {
@@ -24,6 +30,38 @@ export class FetchModelProvider implements ModelProvider {
   private readonly model: string;
 
   async completeJson(prompt: string): Promise<string> {
+    return this.completeChat({
+      messages: [{ role: "user", content: prompt }],
+      responseFormat: { type: "json_object" }
+    });
+  }
+
+  async completeVisionText({ prompt, file }: VisionTextInput): Promise<string> {
+    return this.completeChat({
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            {
+              type: "image_url",
+              image_url: {
+                url: await fileToDataUrl(file)
+              }
+            }
+          ]
+        }
+      ]
+    });
+  }
+
+  private async completeChat({
+    messages,
+    responseFormat
+  }: {
+    messages: ChatMessage[];
+    responseFormat?: { type: "json_object" };
+  }): Promise<string> {
     const response = await fetch(this.endpoint, {
       method: "POST",
       headers: {
@@ -32,8 +70,8 @@ export class FetchModelProvider implements ModelProvider {
       },
       body: JSON.stringify({
         model: this.model,
-        messages: [{ role: "user", content: prompt }],
-        response_format: { type: "json_object" }
+        messages,
+        ...(responseFormat ? { response_format: responseFormat } : {})
       })
     });
 
@@ -54,6 +92,22 @@ export class FetchModelProvider implements ModelProvider {
   }
 }
 
+type ChatMessage = {
+  role: "user";
+  content:
+    | string
+    | Array<
+        | { type: "text"; text: string }
+        | { type: "image_url"; image_url: { url: string } }
+      >;
+};
+
 function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/g, "");
+}
+
+async function fileToDataUrl(file: File): Promise<string> {
+  const bytes = Buffer.from(await file.arrayBuffer()).toString("base64");
+
+  return `data:${file.type};base64,${bytes}`;
 }

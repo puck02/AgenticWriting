@@ -13,12 +13,11 @@ npm run dev
 
 ## AI 模式
 
-默认使用 deterministic reviewer，便于本地开发和测试，不会调用外部模型。
+默认产品路径会在模型环境变量齐全时调用真实 OpenAI-compatible Chat Completions；测试环境仍使用 deterministic/mock adapter，避免单元测试依赖外部网络。
 
 如需启用 OpenAI-compatible 第三方中转站，在 `.env.local` 中配置：
 
 ```env
-REVIEWER_MODE="production"
 MODEL_API_BASE_URL="https://your-provider.example/v1"
 MODEL_API_KEY="your-api-key"
 MODEL_NAME="your-model-name"
@@ -30,7 +29,13 @@ MODEL_NAME="your-model-name"
 MODEL_API_ENDPOINT="https://your-provider.example/v1/chat/completions"
 ```
 
-`MODEL_API_ENDPOINT` 优先级高于 `MODEL_API_BASE_URL`。图片识别当前使用 mock OCR adapter，上传图片后会生成可编辑识别草稿；后续可替换为真实 OCR 或多模态模型适配器。
+`MODEL_API_ENDPOINT` 优先级高于 `MODEL_API_BASE_URL`。OCR 通过同一个 OpenAI-compatible endpoint 调用视觉模型；如果批改模型不支持图片，额外配置：
+
+```env
+OCR_MODEL_NAME="your-vision-model-name"
+```
+
+只有显式设置 `REVIEWER_MODE="deterministic"` 或 `OCR_MODE="mock"` 时，才会进入本地演示模式。
 
 ## 验证
 

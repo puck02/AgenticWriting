@@ -3,7 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { uploadPurposeSchema } from "@/domain/uploads";
 import { db } from "@/lib/db";
 import { getOrCreateCurrentUser } from "@/lib/session";
-import { createOcrDraft, MockOcrAdapter, processOcrUpload } from "@/services/ocr/ocr-service";
+import { createOcrAdapterFromEnv } from "@/services/ocr/ocr-adapter-factory";
+import { createOcrDraft, processOcrUpload } from "@/services/ocr/ocr-service";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData().catch(() => null);
@@ -19,6 +20,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid upload payload" }, { status: 400 });
   }
 
+  const adapter = createOcrAdapterFromEnv();
+
   try {
     const user = await getOrCreateCurrentUser(db);
     const result = await processOcrUpload({
@@ -26,7 +29,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       purpose: parsedPurpose.data,
       file,
-      adapter: new MockOcrAdapter()
+      adapter
     });
 
     return NextResponse.json(result);
@@ -35,7 +38,7 @@ export async function POST(request: NextRequest) {
       try {
         const result = await createOcrDraft({
           file,
-          adapter: new MockOcrAdapter()
+          adapter
         });
 
         return NextResponse.json(result);
