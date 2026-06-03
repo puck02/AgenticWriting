@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: ${POSTGRES_IMAGE:-docker.1ms.run/library/postgres:16-alpine}
     environment:
       POSTGRES_DB: agentic_writing
       POSTGRES_USER: postgres
