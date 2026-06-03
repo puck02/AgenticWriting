@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { uploadPurposeSchema } from "@/domain/uploads";
 import { db } from "@/lib/db";
 import { getOrCreateCurrentUser } from "@/lib/session";
-import { MockOcrAdapter, processOcrUpload } from "@/services/ocr/ocr-service";
+import { createOcrDraft, MockOcrAdapter, processOcrUpload } from "@/services/ocr/ocr-service";
 
 export async function POST(request: NextRequest) {
   const formData = await request.formData().catch(() => null);
@@ -19,9 +19,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid upload payload" }, { status: 400 });
   }
 
-  const user = await getOrCreateCurrentUser(db);
-
   try {
+    const user = await getOrCreateCurrentUser(db);
     const result = await processOcrUpload({
       db,
       userId: user.id,
@@ -32,11 +31,33 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const result = await createOcrDraft({
+          file,
+          adapter: new MockOcrAdapter()
+        });
+
+        return NextResponse.json(result);
+      } catch (draftError) {
+        return NextResponse.json(
+          {
+            error: getErrorMessage(draftError)
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "OCR failed"
+        error: getErrorMessage(error)
       },
       { status: 400 }
     );
   }
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "OCR failed";
 }

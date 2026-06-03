@@ -73,6 +73,26 @@ export async function processOcrUpload({
   };
 }
 
+export async function createOcrDraft({
+  file,
+  adapter
+}: {
+  file: File;
+  adapter: OcrAdapter;
+}) {
+  validateImageFile(file);
+
+  const recognized = await adapter.recognize(file);
+  const normalizedText = normalizeOcrText(recognized.rawText);
+
+  return {
+    uploadId: null,
+    status: "READY",
+    rawText: recognized.rawText,
+    normalizedText
+  };
+}
+
 function validateImageFile(file: File) {
   if (!file.type.startsWith("image/")) {
     throw new Error("Only image uploads are supported");
