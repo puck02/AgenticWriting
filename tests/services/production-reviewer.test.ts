@@ -127,4 +127,24 @@ describe("FetchModelProvider", () => {
       }
     ]);
   });
+
+  it("includes provider status and response body when requests fail", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        text: vi.fn().mockResolvedValue("{\"error\":\"model not found\"}")
+      })
+    );
+    const provider = new FetchModelProvider({
+      baseUrl: "https://provider.example/v1",
+      apiKey: "test-key",
+      model: "missing-model"
+    });
+
+    await expect(provider.completeJson("review this essay")).rejects.toThrow(
+      "Model provider request failed with status 400: {\"error\":\"model not found\"}"
+    );
+  });
 });

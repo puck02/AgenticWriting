@@ -76,7 +76,9 @@ export class FetchModelProvider implements ModelProvider {
     });
 
     if (!response.ok) {
-      throw new Error("Model provider request failed");
+      throw new Error(
+        `Model provider request failed with status ${response.status}: ${await readResponseSummary(response)}`
+      );
     }
 
     const data = (await response.json()) as {
@@ -110,4 +112,10 @@ async function fileToDataUrl(file: File): Promise<string> {
   const bytes = Buffer.from(await file.arrayBuffer()).toString("base64");
 
   return `data:${file.type};base64,${bytes}`;
+}
+
+async function readResponseSummary(response: Response): Promise<string> {
+  const body = await response.text().catch(() => "");
+
+  return body.slice(0, 500) || "empty response body";
 }
