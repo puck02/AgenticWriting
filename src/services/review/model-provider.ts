@@ -13,21 +13,25 @@ export class FetchModelProvider implements ModelProvider {
     endpoint,
     baseUrl,
     apiKey,
-    model
+    model,
+    retryDelaysMs
   }: {
     endpoint?: string;
     baseUrl?: string;
     apiKey: string;
     model: string;
+    retryDelaysMs?: number[];
   }) {
     this.endpoint = endpoint ?? `${trimTrailingSlash(baseUrl ?? "")}/chat/completions`;
     this.apiKey = apiKey;
     this.model = model;
+    this.retryDelaysMs = retryDelaysMs ?? [800, 2000];
   }
 
   private readonly endpoint: string;
   private readonly apiKey: string;
   private readonly model: string;
+  private readonly retryDelaysMs: number[];
 
   async completeJson(prompt: string): Promise<string> {
     return this.completeChat({
@@ -62,24 +66,10 @@ export class FetchModelProvider implements ModelProvider {
     messages: ChatMessage[];
     responseFormat?: { type: "json_object" };
   }): Promise<string> {
-    const response = await fetch(this.endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`
-      },
-      body: JSON.stringify({
-        model: this.model,
-        messages,
-        ...(responseFormat ? { response_format: responseFormat } : {})
-      })
+    const response = await this.fetchWithRetry({
+      messages,
+      responseFormat
     });
-
-    if (!response.ok) {
-      throw new Error(
-        `Model provider request failed with status ${response.status}: ${await readResponseSummary(response)}`
-      );
-    }
 
     const data = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
@@ -91,6 +81,62 @@ export class FetchModelProvider implements ModelProvider {
     }
 
     return content;
+  }
+
+  private async fetchWithRetry({
+    messages,
+    responseFormat
+  }: {
+    messages: ChatMessage[];
+    responseFormat?: { type: "json_object" };
+  }): Promise<Response> {
+    let lastError: Error | null = null;
+
+    for (let attempt = 0; attempt <= this.retryDelaysMs.length; attempt += 1) {
+      if (attempt > 0) {
+        await delay(this.retryDelaysMs[attempt - 1]);
+      }
+
+      try {
+        const response = await fetch(this.endpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({
+            model: this.model,
+            messages,
+            ...(responseFormat ? { response_format: responseFormat } : {})
+          })
+        });
+
+        if (response.ok) {
+          return response;
+        }
+
+        const error = new Error(
+          `Model provider request failed with status ${response.status}: ${await readResponseSummary(response)}`
+        );
+
+        if (!isTransientStatus(response.status) || attempt === this.retryDelaysMs.length) {
+          throw error;
+        }
+
+        lastError = error;
+      } catch (error) {
+        const normalizedError =
+          error instanceof Error ? error : new Error("Model provider request failed");
+
+        if (!isTransientNetworkError(normalizedError) || attempt === this.retryDelaysMs.length) {
+          throw normalizedError;
+        }
+
+        lastError = normalizedError;
+      }
+    }
+
+    throw lastError ?? new Error("Model provider request failed");
   }
 }
 
@@ -118,4 +164,18 @@ async function readResponseSummary(response: Response): Promise<string> {
   const body = await response.text().catch(() => "");
 
   return body.slice(0, 500) || "empty response body";
+}
+
+function isTransientStatus(status: number): boolean {
+  return status === 429 || status >= 500;
+}
+
+function isTransientNetworkError(error: Error): boolean {
+  return error.message === "fetch failed";
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }

@@ -147,4 +147,52 @@ describe("FetchModelProvider", () => {
       "Model provider request failed with status 400: {\"error\":\"model not found\"}"
     );
   });
+
+  it("retries transient provider failures", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        text: vi.fn().mockResolvedValue("{\"error\":\"bad gateway\"}")
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          choices: [{ message: { content: validReviewJson } }]
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new FetchModelProvider({
+      baseUrl: "https://provider.example/v1",
+      apiKey: "test-key",
+      model: "test-model",
+      retryDelaysMs: [0]
+    });
+
+    const content = await provider.completeJson("review this essay");
+
+    expect(content).toBe(validReviewJson);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry non-transient provider failures", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 400,
+      text: vi.fn().mockResolvedValue("{\"error\":\"bad request\"}")
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new FetchModelProvider({
+      baseUrl: "https://provider.example/v1",
+      apiKey: "test-key",
+      model: "test-model",
+      retryDelaysMs: [0]
+    });
+
+    await expect(provider.completeJson("review this essay")).rejects.toThrow(
+      "status 400"
+    );
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
 });
