@@ -2,6 +2,8 @@
 
 import { useState, type ChangeEvent } from "react";
 
+import { uploadImageForOcr } from "@/services/ocr/upload-client";
+
 type OcrPurpose = "PROMPT" | "CONTENT";
 type OcrUploadStatus = "idle" | "uploading" | "ready" | "failed";
 
@@ -28,24 +30,8 @@ export function OcrUploadControl({
     setMessage("正在识别图片文字...");
 
     try {
-      const formData = new FormData();
-      formData.set("purpose", purpose);
-      formData.set("file", file);
-
-      const response = await fetch("/api/uploads/ocr", {
-        method: "POST",
-        body: formData
-      });
-      const data = (await response.json()) as {
-        normalizedText?: string;
-        error?: string;
-      };
-
-      if (!response.ok || !data.normalizedText) {
-        throw new Error(data.error ?? "图片识别失败");
-      }
-
-      onRecognized(data.normalizedText);
+      const recognizedText = await uploadImageForOcr({ purpose, file });
+      onRecognized(recognizedText);
       setStatus("ready");
       setMessage("识别完成，请核对后再提交。");
     } catch (error) {

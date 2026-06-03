@@ -76,7 +76,7 @@ export function IslandGlyph({
   children: ReactNode;
 }) {
   return (
-    <span className="island-glyph" aria-label={label}>
+    <span className="island-glyph" aria-hidden="true" title={label}>
       {children}
     </span>
   );
