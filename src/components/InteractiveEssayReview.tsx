@@ -55,6 +55,9 @@ export function InteractiveEssayReview({
       )
   );
   const [freshSuggestionId, setFreshSuggestionId] = useState<string | null>(null);
+  const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(
+    null
+  );
 
   function handleAccepted(suggestionId: string) {
     setAcceptedSuggestionIds((currentIds) => {
@@ -63,6 +66,27 @@ export function InteractiveEssayReview({
       return nextIds;
     });
     setFreshSuggestionId(suggestionId);
+    setActiveSuggestionId(suggestionId);
+  }
+
+  function activateSuggestion({
+    suggestionId,
+    shouldScroll = false
+  }: {
+    suggestionId: string;
+    shouldScroll?: boolean;
+  }) {
+    setActiveSuggestionId(suggestionId);
+
+    if (shouldScroll) {
+      const targetCard = document.getElementById(
+        `review-suggestion-card-${suggestionId}`
+      );
+
+      if (typeof targetCard?.scrollIntoView === "function") {
+        targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
   }
 
   return (
@@ -76,27 +100,37 @@ export function InteractiveEssayReview({
             }
 
             const isAccepted = acceptedSuggestionIds.has(segment.suggestion.id);
+            const isActive = activeSuggestionId === segment.suggestion.id;
 
             return (
-              <span
+              <button
+                type="button"
                 key={segment.key}
                 data-testid={`review-sentence-${segment.suggestion.id}`}
+                aria-pressed={isActive}
                 className={[
                   "review-sentence",
                   isAccepted
                     ? "review-sentence-accepted"
                     : "review-sentence-pending",
+                  isActive ? "review-sentence-active" : "",
                   freshSuggestionId === segment.suggestion.id
                     ? "review-sentence-fresh"
                     : ""
                 ]
                   .filter(Boolean)
                   .join(" ")}
+                onClick={() =>
+                  activateSuggestion({
+                    suggestionId: segment.suggestion.id,
+                    shouldScroll: true
+                  })
+                }
               >
                 {isAccepted
                   ? segment.suggestion.suggestedSentence
                   : segment.originalText}
-              </span>
+              </button>
             );
           })}
         </p>
@@ -123,6 +157,10 @@ export function InteractiveEssayReview({
                 accepted={suggestion.accepted}
                 rejectLabel={suggestion.rejectLabel}
                 onAccepted={handleAccepted}
+                isActive={activeSuggestionId === suggestion.id}
+                onActivate={(suggestionId) =>
+                  activateSuggestion({ suggestionId })
+                }
               />
             ))
           ) : (

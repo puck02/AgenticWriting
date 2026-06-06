@@ -66,4 +66,23 @@ describe("InteractiveEssayReview", () => {
       })
     );
   });
+
+  it("links highlighted sentences with their suggestion cards", () => {
+    render(
+      <InteractiveEssayReview
+        essayId="essay-1"
+        content={"Practice is important.\nStudents should keep trying."}
+        suggestions={[baseSuggestion]}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId("review-sentence-suggestion-1"));
+
+    expect(screen.getByTestId("review-sentence-suggestion-1").className).toContain(
+      "review-sentence-active"
+    );
+    expect(screen.getByTestId("review-suggestion-card-suggestion-1").className).toContain(
+      "review-suggestion-active"
+    );
+  });
 });

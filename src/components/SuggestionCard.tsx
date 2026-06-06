@@ -16,7 +16,9 @@ export function SuggestionCard({
   profileExplanation,
   accepted,
   rejectLabel,
-  onAccepted
+  onAccepted,
+  isActive = false,
+  onActivate
 }: {
   essayId: string;
   suggestionId: string;
@@ -27,6 +29,8 @@ export function SuggestionCard({
   accepted?: boolean | null;
   rejectLabel?: RejectLabelValue | null;
   onAccepted?: (suggestionId: string) => void;
+  isActive?: boolean;
+  onActivate?: (suggestionId: string) => void;
 }) {
   const [status, setStatus] = useState<FeedbackStatus>(
     accepted === true ? "accepted" : accepted === false ? "rejected" : "idle"
@@ -77,87 +81,103 @@ export function SuggestionCard({
   }
 
   return (
-    <IslandCard className="p-4 sm:p-5">
-      <div className="grid gap-3 lg:grid-cols-2">
-        <div className="rounded-[18px] bg-[#fffdf4] p-3">
-          <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#9a835a]">
-            原句
-          </p>
-          <p className="text-sm leading-6 text-[#3f3426]">{originalSentence}</p>
+    <div
+      id={`review-suggestion-card-${suggestionId}`}
+      data-testid={`review-suggestion-card-${suggestionId}`}
+      className={[
+        "review-suggestion-card",
+        isActive ? "review-suggestion-active" : ""
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      onClick={() => onActivate?.(suggestionId)}
+      onFocus={() => onActivate?.(suggestionId)}
+      onMouseEnter={() => onActivate?.(suggestionId)}
+    >
+      <IslandCard className="p-4 sm:p-5">
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-[18px] bg-[#fffdf4] p-3">
+            <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#9a835a]">
+              原句
+            </p>
+            <p className="text-sm leading-6 text-[#3f3426]">{originalSentence}</p>
+          </div>
+          <div className="rounded-[18px] border-2 border-[#82d5bb]/35 bg-[#82d5bb]/15 p-3">
+            <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#14866d]">
+              建议表达
+            </p>
+            <p className="text-sm leading-6 text-[#3f3426]">
+              {suggestedSentence}
+            </p>
+          </div>
         </div>
-        <div className="rounded-[18px] border-2 border-[#82d5bb]/35 bg-[#82d5bb]/15 p-3">
-          <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#14866d]">
-            建议表达
-          </p>
-          <p className="text-sm leading-6 text-[#3f3426]">{suggestedSentence}</p>
-        </div>
-      </div>
 
-      <div className="mt-4 space-y-2 text-sm leading-6 text-[#725d42]">
-        <p>
-          <span className="font-black text-[#3f3426]">修改理由：</span>
-          {reason}
-        </p>
-        {profileExplanation ? (
+        <div className="mt-4 space-y-2 text-sm leading-6 text-[#725d42]">
           <p>
-            <span className="font-black text-[#3f3426]">画像说明：</span>
-            {profileExplanation}
+            <span className="font-black text-[#3f3426]">修改理由：</span>
+            {reason}
           </p>
-        ) : null}
-      </div>
+          {profileExplanation ? (
+            <p>
+              <span className="font-black text-[#3f3426]">画像说明：</span>
+              {profileExplanation}
+            </p>
+          ) : null}
+        </div>
 
-      <div className="mt-4 flex flex-col gap-3 border-t-2 border-[#725d42]/10 pt-4 md:flex-row md:items-center md:justify-between">
-        <div className="grid gap-2 sm:grid-cols-[auto_13rem_auto] sm:items-center">
-          <IslandButton
-            type="button"
-            variant="primary"
-            className="whitespace-nowrap"
-            onClick={() => submitFeedback({ nextAccepted: true })}
-            disabled={isSubmitting || hasSavedFeedback}
-          >
-            采纳
-          </IslandButton>
-          <div className="min-w-0">
-            <IslandSelect
-              value={selectedRejectLabel}
-              onChange={(event) =>
-                setSelectedRejectLabel(event.target.value as RejectLabelValue)
+        <div className="mt-4 flex flex-col gap-3 border-t-2 border-[#725d42]/10 pt-4 md:flex-row md:items-center md:justify-between">
+          <div className="grid gap-2 sm:grid-cols-[auto_13rem_auto] sm:items-center">
+            <IslandButton
+              type="button"
+              variant="primary"
+              className="whitespace-nowrap"
+              onClick={() => submitFeedback({ nextAccepted: true })}
+              disabled={isSubmitting || hasSavedFeedback}
+            >
+              采纳
+            </IslandButton>
+            <div className="min-w-0">
+              <IslandSelect
+                value={selectedRejectLabel}
+                onChange={(event) =>
+                  setSelectedRejectLabel(event.target.value as RejectLabelValue)
+                }
+                disabled={isSubmitting || hasSavedFeedback}
+              >
+                {rejectLabels.map((label) => (
+                  <option key={label.value} value={label.value}>
+                    {label.label}
+                  </option>
+                ))}
+              </IslandSelect>
+            </div>
+            <IslandButton
+              type="button"
+              className="whitespace-nowrap"
+              onClick={() =>
+                submitFeedback({
+                  nextAccepted: false,
+                  nextRejectLabel: selectedRejectLabel
+                })
               }
               disabled={isSubmitting || hasSavedFeedback}
             >
-              {rejectLabels.map((label) => (
-                <option key={label.value} value={label.value}>
-                  {label.label}
-                </option>
-              ))}
-            </IslandSelect>
+              不采纳
+            </IslandButton>
           </div>
-          <IslandButton
-            type="button"
-            className="whitespace-nowrap"
-            onClick={() =>
-              submitFeedback({
-                nextAccepted: false,
-                nextRejectLabel: selectedRejectLabel
-              })
-            }
-            disabled={isSubmitting || hasSavedFeedback}
-          >
-            不采纳
-          </IslandButton>
+          <p className="text-sm text-[#725d42]">
+            {isSubmitting
+              ? "正在保存反馈..."
+              : error
+                ? error
+                : status === "accepted"
+                  ? "已采纳，表达会进入个人表达库。"
+                  : status === "rejected"
+                    ? "已记录不采纳原因。"
+                    : "选择后会更新你的写作画像。"}
+          </p>
         </div>
-        <p className="text-sm text-[#725d42]">
-          {isSubmitting
-            ? "正在保存反馈..."
-            : error
-              ? error
-              : status === "accepted"
-                ? "已采纳，表达会进入个人表达库。"
-                : status === "rejected"
-                  ? "已记录不采纳原因。"
-                  : "选择后会更新你的写作画像。"}
-        </p>
-      </div>
-    </IslandCard>
+      </IslandCard>
+    </div>
   );
 }
