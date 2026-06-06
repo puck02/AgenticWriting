@@ -102,16 +102,17 @@ export function SuggestionCard({
       </div>
 
       <div className="mt-4 flex flex-col gap-3 border-t-2 border-[#725d42]/10 pt-4 md:flex-row md:items-center md:justify-between">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="grid gap-2 sm:grid-cols-[auto_13rem_auto] sm:items-center">
           <IslandButton
             type="button"
             variant="primary"
+            className="whitespace-nowrap"
             onClick={() => submitFeedback({ nextAccepted: true })}
             disabled={isSubmitting || hasSavedFeedback}
           >
             采纳
           </IslandButton>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="min-w-0">
             <IslandSelect
               value={selectedRejectLabel}
               onChange={(event) =>
@@ -125,19 +126,20 @@ export function SuggestionCard({
                 </option>
               ))}
             </IslandSelect>
-            <IslandButton
-              type="button"
-              onClick={() =>
-                submitFeedback({
-                  nextAccepted: false,
-                  nextRejectLabel: selectedRejectLabel
-                })
-              }
-              disabled={isSubmitting || hasSavedFeedback}
-            >
-              不采纳
-            </IslandButton>
           </div>
+          <IslandButton
+            type="button"
+            className="whitespace-nowrap"
+            onClick={() =>
+              submitFeedback({
+                nextAccepted: false,
+                nextRejectLabel: selectedRejectLabel
+              })
+            }
+            disabled={isSubmitting || hasSavedFeedback}
+          >
+            不采纳
+          </IslandButton>
         </div>
         <p className="text-sm text-[#725d42]">
           {isSubmitting
