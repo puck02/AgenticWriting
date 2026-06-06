@@ -15,7 +15,8 @@ export function SuggestionCard({
   reason,
   profileExplanation,
   accepted,
-  rejectLabel
+  rejectLabel,
+  onAccepted
 }: {
   essayId: string;
   suggestionId: string;
@@ -25,6 +26,7 @@ export function SuggestionCard({
   profileExplanation?: string | null;
   accepted?: boolean | null;
   rejectLabel?: RejectLabelValue | null;
+  onAccepted?: (suggestionId: string) => void;
 }) {
   const [status, setStatus] = useState<FeedbackStatus>(
     accepted === true ? "accepted" : accepted === false ? "rejected" : "idle"
@@ -62,6 +64,9 @@ export function SuggestionCard({
       }
 
       setStatus(nextAccepted ? "accepted" : "rejected");
+      if (nextAccepted) {
+        onAccepted?.(suggestionId);
+      }
     } catch (feedbackError) {
       setError(
         feedbackError instanceof Error ? feedbackError.message : "反馈保存失败"

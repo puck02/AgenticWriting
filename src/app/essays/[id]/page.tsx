@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AppNav } from "@/components/AppNav";
-import { SuggestionCard } from "@/components/SuggestionCard";
+import { InteractiveEssayReview } from "@/components/InteractiveEssayReview";
 import { essayTypes } from "@/domain/labels";
 import { db } from "@/lib/db";
 import { getOrCreateCurrentUser } from "@/lib/session";
@@ -74,44 +74,19 @@ export default async function EssayDetailPage({
           </div>
         </section>
 
-        <section className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-          <aside className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-base font-semibold text-slate-950">原文</h2>
-            <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
-              {essay.content}
-            </p>
-          </aside>
-
-          <div>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-slate-950">逐句建议</h2>
-              <span className="rounded-md bg-slate-100 px-2.5 py-1 text-sm text-slate-600">
-                {essay.suggestions.length} 条
-              </span>
-            </div>
-            <div className="space-y-4">
-              {essay.suggestions.length > 0 ? (
-                essay.suggestions.map((suggestion) => (
-                  <SuggestionCard
-                    key={suggestion.id}
-                    essayId={essay.id}
-                    suggestionId={suggestion.id}
-                    originalSentence={suggestion.originalSentence}
-                    suggestedSentence={suggestion.suggestedSentence}
-                    reason={suggestion.reason}
-                    profileExplanation={suggestion.profileExplanation}
-                    accepted={suggestion.accepted}
-                    rejectLabel={suggestion.rejectLabel}
-                  />
-                ))
-              ) : (
-                <p className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                  暂无逐句建议。
-                </p>
-              )}
-            </div>
-          </div>
-        </section>
+        <InteractiveEssayReview
+          essayId={essay.id}
+          content={essay.content}
+          suggestions={essay.suggestions.map((suggestion) => ({
+            id: suggestion.id,
+            originalSentence: suggestion.originalSentence,
+            suggestedSentence: suggestion.suggestedSentence,
+            reason: suggestion.reason,
+            profileExplanation: suggestion.profileExplanation,
+            accepted: suggestion.accepted,
+            rejectLabel: suggestion.rejectLabel
+          }))}
+        />
       </div>
     </main>
   );
