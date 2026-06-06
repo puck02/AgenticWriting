@@ -4,12 +4,14 @@ type IslandButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "default";
   size?: "small" | "middle" | "large";
   loading?: boolean;
+  loadingLabel?: string;
 };
 
 export function IslandButton({
   variant = "default",
   size = "middle",
   loading = false,
+  loadingLabel = "处理中...",
   className,
   children,
   disabled,
@@ -26,9 +28,10 @@ export function IslandButton({
         .filter(Boolean)
         .join(" ")}
       disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? "处理中..." : children}
+      {loading ? loadingLabel : children}
     </button>
   );
 }

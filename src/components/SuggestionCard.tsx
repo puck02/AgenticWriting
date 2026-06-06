@@ -17,6 +17,7 @@ export function SuggestionCard({
   accepted,
   rejectLabel,
   onAccepted,
+  onFeedbackSaved,
   isActive = false,
   onActivate
 }: {
@@ -29,6 +30,7 @@ export function SuggestionCard({
   accepted?: boolean | null;
   rejectLabel?: RejectLabelValue | null;
   onAccepted?: (suggestionId: string) => void;
+  onFeedbackSaved?: (suggestionId: string, accepted: boolean) => void;
   isActive?: boolean;
   onActivate?: (suggestionId: string) => void;
 }) {
@@ -41,6 +43,17 @@ export function SuggestionCard({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasSavedFeedback = status === "accepted" || status === "rejected";
+  const statusLabel =
+    status === "accepted" ? "已采纳" : status === "rejected" ? "不采纳" : "待处理";
+  const statusMessage = isSubmitting
+    ? "正在保存反馈..."
+    : error
+      ? error
+      : status === "accepted"
+        ? "已采纳，表达会进入个人表达库。"
+        : status === "rejected"
+          ? "已记录不采纳原因。"
+          : "选择后会更新你的写作画像。";
 
   async function submitFeedback({
     nextAccepted,
@@ -68,6 +81,7 @@ export function SuggestionCard({
       }
 
       setStatus(nextAccepted ? "accepted" : "rejected");
+      onFeedbackSaved?.(suggestionId, nextAccepted);
       if (nextAccepted) {
         onAccepted?.(suggestionId);
       }
@@ -90,11 +104,26 @@ export function SuggestionCard({
       ]
         .filter(Boolean)
         .join(" ")}
+      tabIndex={0}
       onClick={() => onActivate?.(suggestionId)}
       onFocus={() => onActivate?.(suggestionId)}
       onMouseEnter={() => onActivate?.(suggestionId)}
     >
       <IslandCard className="p-4 sm:p-5">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <span
+            className={[
+              "review-feedback-badge",
+              `review-feedback-badge-${status}`
+            ].join(" ")}
+          >
+            {statusLabel}
+          </span>
+          <span className="text-xs font-bold text-[#725d42]/80">
+            点击原文高亮可定位本条建议
+          </span>
+        </div>
+
         <div className="grid gap-3 lg:grid-cols-2">
           <div className="rounded-[18px] bg-[#fffdf4] p-3">
             <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#9a835a]">
@@ -165,16 +194,12 @@ export function SuggestionCard({
               不采纳
             </IslandButton>
           </div>
-          <p className="text-sm text-[#725d42]">
-            {isSubmitting
-              ? "正在保存反馈..."
-              : error
-                ? error
-                : status === "accepted"
-                  ? "已采纳，表达会进入个人表达库。"
-                  : status === "rejected"
-                    ? "已记录不采纳原因。"
-                    : "选择后会更新你的写作画像。"}
+          <p
+            role={error ? "alert" : "status"}
+            aria-live="polite"
+            className={error ? "text-sm text-red-700" : "text-sm text-[#725d42]"}
+          >
+            {statusMessage}
           </p>
         </div>
       </IslandCard>

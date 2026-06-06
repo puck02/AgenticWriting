@@ -10,6 +10,51 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("EssaySubmitForm", () => {
+  it("keeps submit disabled until prompt and content are ready", () => {
+    render(<EssaySubmitForm />);
+
+    const submitButton = screen.getByRole("button", { name: "提交批改" });
+
+    expect((submitButton as HTMLButtonElement).disabled).toBe(true);
+
+    fireEvent.change(screen.getByLabelText("作文题目"), {
+      target: { value: "Write about steady practice." }
+    });
+    fireEvent.change(screen.getByLabelText("作文正文"), {
+      target: { value: "Practice is important for every student." }
+    });
+
+    expect((submitButton as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.getByTestId("essay-form-readiness").textContent).toContain(
+      "可以提交"
+    );
+  });
+
+  it("shows a specific review progress state while submitting", async () => {
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => undefined));
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<EssaySubmitForm />);
+
+    fireEvent.change(screen.getByLabelText("作文题目"), {
+      target: { value: "Write about steady practice." }
+    });
+    fireEvent.change(screen.getByLabelText("作文正文"), {
+      target: { value: "Practice is important for every student." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "提交批改" }));
+
+    await waitFor(() => {
+      expect(
+        (screen.getByRole("button", { name: "正在批改..." }) as HTMLButtonElement)
+          .disabled
+      ).toBe(true);
+    });
+    expect(screen.getByRole("status").textContent).toContain(
+      "正在生成批改，请保持本页打开。"
+    );
+  });
+
   it("recognizes a pasted prompt image and fills the prompt textarea", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

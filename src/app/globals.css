@@ -39,6 +39,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   min-height: 100vh;
   background:
@@ -94,6 +98,11 @@ input {
   box-shadow: none;
 }
 
+.island-button:focus-visible {
+  outline: 3px solid rgba(25, 200, 185, 0.36);
+  outline-offset: 3px;
+}
+
 .island-button-primary {
   border-color: #f8f8f0;
   background: #f8f8f0;
@@ -101,6 +110,12 @@ input {
 
 .island-button-default {
   background: #fffdf4;
+}
+
+.nav-link-active {
+  border-color: rgba(25, 200, 185, 0.7);
+  background: #fffdf4;
+  color: #14866d;
 }
 
 .island-button-small {
@@ -244,6 +259,12 @@ input {
   box-shadow: inset 0 0 0 1px rgba(25, 200, 185, 0.28);
 }
 
+.review-sentence-rejected {
+  background: rgba(114, 93, 66, 0.08);
+  color: #6b5540;
+  box-shadow: inset 0 0 0 1px rgba(114, 93, 66, 0.16);
+}
+
 .review-sentence-active {
   box-shadow:
     inset 0 0 0 1px rgba(25, 200, 185, 0.5),
@@ -271,6 +292,78 @@ input {
   box-shadow: 0 0 0 4px rgba(25, 200, 185, 0.18);
 }
 
+.review-suggestion-card:focus-visible {
+  outline: 3px solid rgba(25, 200, 185, 0.32);
+  outline-offset: 4px;
+}
+
+.review-filter-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 0.45rem;
+  border: 2px solid rgba(114, 93, 66, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 253, 244, 0.7);
+  color: #725d42;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 800;
+  padding: 0 0.85rem;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.review-filter-button:hover {
+  border-color: rgba(25, 200, 185, 0.42);
+  transform: translateY(-1px);
+}
+
+.review-filter-button:active {
+  transform: translateY(1px);
+}
+
+.review-filter-button:focus-visible {
+  outline: 3px solid rgba(25, 200, 185, 0.3);
+  outline-offset: 2px;
+}
+
+.review-filter-button-active {
+  border-color: rgba(25, 200, 185, 0.72);
+  background: rgba(130, 213, 187, 0.24);
+  color: #14866d;
+}
+
+.review-feedback-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  line-height: 1;
+  padding: 0.45rem 0.7rem;
+}
+
+.review-feedback-badge-idle,
+.review-feedback-badge-pending {
+  background: rgba(247, 205, 103, 0.35);
+  color: #725d42;
+}
+
+.review-feedback-badge-accepted {
+  background: rgba(130, 213, 187, 0.3);
+  color: #14866d;
+}
+
+.review-feedback-badge-rejected {
+  background: rgba(114, 93, 66, 0.1);
+  color: #725d42;
+}
+
 @keyframes review-sentence-fresh {
   0% {
     background: rgba(25, 200, 185, 0.58);
@@ -284,5 +377,19 @@ input {
     box-shadow:
       inset 0 0 0 1px rgba(25, 200, 185, 0.28),
       0 0 0 10px rgba(25, 200, 185, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
   }
 }

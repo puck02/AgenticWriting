@@ -42,6 +42,18 @@ export function EssaySubmitForm() {
     status: "idle",
     message: null
   });
+  const isOcrUploading =
+    promptPasteOcr.status === "uploading" || contentPasteOcr.status === "uploading";
+  const hasPrompt = prompt.trim().length > 0;
+  const hasContent = content.trim().length > 0;
+  const canSubmit = hasPrompt && hasContent && !isPending && !isOcrUploading;
+  const readinessMessage = getReadinessMessage({
+    hasPrompt,
+    hasContent,
+    isOcrUploading,
+    isPending
+  });
+  const contentWordCount = countEnglishWords(content);
 
   async function handleImagePaste({
     event,
@@ -86,6 +98,12 @@ export function EssaySubmitForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (!canSubmit) {
+      setError("请先填写作文题目和正文。");
+      return;
+    }
+
     setIsPending(true);
 
     try {
@@ -241,10 +259,23 @@ export function EssaySubmitForm() {
         </p>
       ) : null}
 
+      <div
+        data-testid="essay-form-readiness"
+        role="status"
+        aria-live="polite"
+        className="grid gap-2 rounded-[18px] border-2 border-[#725d42]/10 bg-[#fffdf4]/75 p-3 text-sm text-[#725d42] sm:grid-cols-[1fr_auto]"
+      >
+        <p className="font-bold text-[#3f3426]">{readinessMessage}</p>
+        <p className="tabular-nums">
+          题目 {prompt.trim().length} 字符 / 正文 {contentWordCount} 词
+        </p>
+      </div>
+
       <IslandButton
         type="submit"
-        disabled={isPending}
+        disabled={!canSubmit}
         loading={isPending}
+        loadingLabel="正在批改..."
         variant="primary"
         size="large"
       >
@@ -268,4 +299,45 @@ function findPastedImage(items: DataTransferItemList): File | null {
   }
 
   return null;
+}
+
+function getReadinessMessage({
+  hasPrompt,
+  hasContent,
+  isOcrUploading,
+  isPending
+}: {
+  hasPrompt: boolean;
+  hasContent: boolean;
+  isOcrUploading: boolean;
+  isPending: boolean;
+}) {
+  if (isPending) {
+    return "正在生成批改，请保持本页打开。";
+  }
+
+  if (isOcrUploading) {
+    return "正在识别图片文字，完成后可提交。";
+  }
+
+  if (!hasPrompt && !hasContent) {
+    return "补全题目和正文后即可提交。";
+  }
+
+  if (!hasPrompt) {
+    return "补全作文题目后即可提交。";
+  }
+
+  if (!hasContent) {
+    return "补全作文正文后即可提交。";
+  }
+
+  return "可以提交，批改会同时更新你的写作画像。";
+}
+
+function countEnglishWords(text: string) {
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter((word) => /[A-Za-z]/.test(word)).length;
 }

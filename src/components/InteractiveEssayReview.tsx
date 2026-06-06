@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 
 import { SuggestionCard } from "@/components/SuggestionCard";
 import type { RejectLabelValue } from "@/domain/labels";
@@ -33,6 +33,16 @@ type MatchRange = {
   end: number;
 };
 
+type SuggestionFeedbackStatus = "pending" | "accepted" | "rejected";
+type SuggestionFilter = "all" | SuggestionFeedbackStatus;
+
+const suggestionFilters: Array<{ value: SuggestionFilter; label: string }> = [
+  { value: "all", label: "全部" },
+  { value: "pending", label: "待处理" },
+  { value: "accepted", label: "已采纳" },
+  { value: "rejected", label: "不采纳" }
+];
+
 export function InteractiveEssayReview({
   essayId,
   content,
@@ -46,26 +56,50 @@ export function InteractiveEssayReview({
     () => buildReviewSegments(content, suggestions),
     [content, suggestions]
   );
-  const [acceptedSuggestionIds, setAcceptedSuggestionIds] = useState(
+  const [feedbackStatuses, setFeedbackStatuses] = useState(
     () =>
-      new Set(
-        suggestions
-          .filter((suggestion) => suggestion.accepted === true)
-          .map((suggestion) => suggestion.id)
+      new Map(
+        suggestions.map((suggestion) => [
+          suggestion.id,
+          getInitialFeedbackStatus(suggestion)
+        ])
       )
   );
   const [freshSuggestionId, setFreshSuggestionId] = useState<string | null>(null);
   const [activeSuggestionId, setActiveSuggestionId] = useState<string | null>(
     null
   );
+  const [activeFilter, setActiveFilter] = useState<SuggestionFilter>("all");
+  const progressCounts = useMemo(
+    () => countSuggestionStatuses(suggestions, feedbackStatuses),
+    [feedbackStatuses, suggestions]
+  );
+  const completedCount = progressCounts.accepted + progressCounts.rejected;
+  const progressPercent =
+    suggestions.length > 0
+      ? Math.round((completedCount / suggestions.length) * 100)
+      : 0;
+  const visibleSuggestions = suggestions.filter((suggestion) => {
+    if (activeFilter === "all") {
+      return true;
+    }
 
-  function handleAccepted(suggestionId: string) {
-    setAcceptedSuggestionIds((currentIds) => {
-      const nextIds = new Set(currentIds);
-      nextIds.add(suggestionId);
-      return nextIds;
+    return getFeedbackStatus(feedbackStatuses, suggestion) === activeFilter;
+  });
+
+  function saveFeedbackStatus({
+    suggestionId,
+    accepted
+  }: {
+    suggestionId: string;
+    accepted: boolean;
+  }) {
+    setFeedbackStatuses((currentStatuses) => {
+      const nextStatuses = new Map(currentStatuses);
+      nextStatuses.set(suggestionId, accepted ? "accepted" : "rejected");
+      return nextStatuses;
     });
-    setFreshSuggestionId(suggestionId);
+    setFreshSuggestionId(accepted ? suggestionId : null);
     setActiveSuggestionId(suggestionId);
   }
 
@@ -89,17 +123,61 @@ export function InteractiveEssayReview({
     }
   }
 
+  function handleWorkflowKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") {
+      return;
+    }
+
+    const navigableSuggestions =
+      visibleSuggestions.length > 0 ? visibleSuggestions : suggestions;
+
+    if (navigableSuggestions.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    const activeIndex = navigableSuggestions.findIndex(
+      (suggestion) => suggestion.id === activeSuggestionId
+    );
+    const fallbackIndex = event.key === "ArrowDown" ? -1 : 0;
+    const currentIndex = activeIndex >= 0 ? activeIndex : fallbackIndex;
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const nextIndex =
+      (currentIndex + direction + navigableSuggestions.length) %
+      navigableSuggestions.length;
+
+    activateSuggestion({
+      suggestionId: navigableSuggestions[nextIndex].id,
+      shouldScroll: true
+    });
+  }
+
   return (
-    <section className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
-      <aside className="rounded-md border border-slate-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold text-slate-950">原文</h2>
-        <p className="review-essay-body mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">
+    <section
+      data-testid="review-workflow"
+      tabIndex={0}
+      aria-label="逐句建议工作流"
+      onKeyDown={handleWorkflowKeyDown}
+      className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]"
+    >
+      <aside className="writing-panel p-4 lg:sticky lg:top-4 lg:self-start">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-base font-black text-[#3f3426]">原文</h2>
+          <span className="rounded-md bg-[#82d5bb]/20 px-2.5 py-1 text-xs font-bold text-[#14866d]">
+            可点击定位
+          </span>
+        </div>
+        <p className="review-essay-body mt-3 whitespace-pre-wrap text-sm leading-7 text-[#725d42]">
           {segments.map((segment) => {
             if (segment.type === "text") {
               return <span key={segment.key}>{segment.text}</span>;
             }
 
-            const isAccepted = acceptedSuggestionIds.has(segment.suggestion.id);
+            const feedbackStatus = getFeedbackStatus(
+              feedbackStatuses,
+              segment.suggestion
+            );
+            const isAccepted = feedbackStatus === "accepted";
             const isActive = activeSuggestionId === segment.suggestion.id;
 
             return (
@@ -108,11 +186,11 @@ export function InteractiveEssayReview({
                 key={segment.key}
                 data-testid={`review-sentence-${segment.suggestion.id}`}
                 aria-pressed={isActive}
+                aria-label={`建议句，${getFeedbackStatusLabel(feedbackStatus)}`}
+                aria-controls={`review-suggestion-card-${segment.suggestion.id}`}
                 className={[
                   "review-sentence",
-                  isAccepted
-                    ? "review-sentence-accepted"
-                    : "review-sentence-pending",
+                  `review-sentence-${feedbackStatus}`,
                   isActive ? "review-sentence-active" : "",
                   freshSuggestionId === segment.suggestion.id
                     ? "review-sentence-fresh"
@@ -137,41 +215,162 @@ export function InteractiveEssayReview({
       </aside>
 
       <div>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-slate-950">逐句建议</h2>
-          <span className="rounded-md bg-slate-100 px-2.5 py-1 text-sm text-slate-600">
-            {suggestions.length} 条
-          </span>
+        <div className="writing-panel mb-4 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-black text-[#3f3426]">逐句建议</h2>
+              <p
+                data-testid="review-progress-summary"
+                className="mt-1 text-sm leading-6 text-[#725d42]"
+              >
+                待处理 {progressCounts.pending} / 已采纳 {progressCounts.accepted} /
+                不采纳 {progressCounts.rejected}
+              </p>
+            </div>
+            <span className="rounded-md bg-[#f7cd67]/35 px-2.5 py-1 text-sm font-bold text-[#725d42]">
+              {completedCount}/{suggestions.length} 已反馈
+            </span>
+          </div>
+
+          <div
+            className="mt-3 h-2 overflow-hidden rounded-full bg-[#725d42]/10"
+            aria-hidden="true"
+          >
+            <div
+              className="h-full rounded-full bg-[#19c8b9] transition-[width] duration-200 ease-out"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {suggestionFilters.map((filter) => {
+              const isSelected = activeFilter === filter.value;
+
+              return (
+                <button
+                  key={filter.value}
+                  type="button"
+                  aria-label={`筛选${filter.label}`}
+                  aria-pressed={isSelected}
+                  className={[
+                    "review-filter-button",
+                    isSelected ? "review-filter-button-active" : ""
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() => setActiveFilter(filter.value)}
+                >
+                  <span>{filter.label}</span>
+                  <span>
+                    {getFilterCount(filter.value, progressCounts, suggestions.length)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         <div className="space-y-4">
-          {suggestions.length > 0 ? (
-            suggestions.map((suggestion) => (
-              <SuggestionCard
-                key={suggestion.id}
-                essayId={essayId}
-                suggestionId={suggestion.id}
-                originalSentence={suggestion.originalSentence}
-                suggestedSentence={suggestion.suggestedSentence}
-                reason={suggestion.reason}
-                profileExplanation={suggestion.profileExplanation}
-                accepted={suggestion.accepted}
-                rejectLabel={suggestion.rejectLabel}
-                onAccepted={handleAccepted}
-                isActive={activeSuggestionId === suggestion.id}
-                onActivate={(suggestionId) =>
-                  activateSuggestion({ suggestionId })
-                }
-              />
-            ))
+          {visibleSuggestions.length > 0 ? (
+            visibleSuggestions.map((suggestion) => {
+              const feedbackStatus = getFeedbackStatus(
+                feedbackStatuses,
+                suggestion
+              );
+
+              return (
+                <SuggestionCard
+                  key={suggestion.id}
+                  essayId={essayId}
+                  suggestionId={suggestion.id}
+                  originalSentence={suggestion.originalSentence}
+                  suggestedSentence={suggestion.suggestedSentence}
+                  reason={suggestion.reason}
+                  profileExplanation={suggestion.profileExplanation}
+                  accepted={
+                    feedbackStatus === "accepted"
+                      ? true
+                      : feedbackStatus === "rejected"
+                        ? false
+                        : null
+                  }
+                  rejectLabel={suggestion.rejectLabel}
+                  onFeedbackSaved={(suggestionId, accepted) =>
+                    saveFeedbackStatus({ suggestionId, accepted })
+                  }
+                  isActive={activeSuggestionId === suggestion.id}
+                  onActivate={(suggestionId) =>
+                    activateSuggestion({ suggestionId })
+                  }
+                />
+              );
+            })
           ) : (
-            <p className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">
-              暂无逐句建议。
+            <p className="writing-panel p-4 text-sm text-[#725d42]">
+              当前筛选下暂无逐句建议。
             </p>
           )}
         </div>
       </div>
     </section>
   );
+}
+
+function getInitialFeedbackStatus(
+  suggestion: InteractiveEssaySuggestion
+): SuggestionFeedbackStatus {
+  if (suggestion.accepted === true) {
+    return "accepted";
+  }
+
+  if (suggestion.accepted === false) {
+    return "rejected";
+  }
+
+  return "pending";
+}
+
+function getFeedbackStatus(
+  feedbackStatuses: Map<string, SuggestionFeedbackStatus>,
+  suggestion: InteractiveEssaySuggestion
+) {
+  return feedbackStatuses.get(suggestion.id) ?? getInitialFeedbackStatus(suggestion);
+}
+
+function countSuggestionStatuses(
+  suggestions: InteractiveEssaySuggestion[],
+  feedbackStatuses: Map<string, SuggestionFeedbackStatus>
+) {
+  return suggestions.reduce(
+    (counts, suggestion) => {
+      counts[getFeedbackStatus(feedbackStatuses, suggestion)] += 1;
+      return counts;
+    },
+    { pending: 0, accepted: 0, rejected: 0 }
+  );
+}
+
+function getFilterCount(
+  filter: SuggestionFilter,
+  counts: Record<SuggestionFeedbackStatus, number>,
+  total: number
+) {
+  if (filter === "all") {
+    return total;
+  }
+
+  return counts[filter];
+}
+
+function getFeedbackStatusLabel(status: SuggestionFeedbackStatus) {
+  if (status === "accepted") {
+    return "已采纳";
+  }
+
+  if (status === "rejected") {
+    return "不采纳";
+  }
+
+  return "待处理";
 }
 
 function buildReviewSegments(
