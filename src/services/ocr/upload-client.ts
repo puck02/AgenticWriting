@@ -1,4 +1,5 @@
 import type { UploadPurposeValue } from "@/domain/uploads";
+import { prepareImageForOcr } from "@/services/ocr/image-preprocessor";
 
 export async function uploadImageForOcr({
   purpose,
@@ -7,9 +8,10 @@ export async function uploadImageForOcr({
   purpose: UploadPurposeValue;
   file: File;
 }): Promise<string> {
+  const uploadFile = await prepareImageForOcr(file);
   const formData = new FormData();
   formData.set("purpose", purpose);
-  formData.set("file", file);
+  formData.set("file", uploadFile);
 
   const response = await fetch("/api/uploads/ocr", {
     method: "POST",
