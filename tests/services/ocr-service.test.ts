@@ -23,12 +23,16 @@ describe("processOcrUpload", () => {
 
   it("stores OCR-ready upload assets with normalized text", async () => {
     const db = createDb();
+    const storage = {
+      save: vi.fn().mockResolvedValue("file://uploads/user-1/essay.png")
+    };
 
     const result = await processOcrUpload({
       db,
       userId: "user-1",
       purpose: "CONTENT",
       file: imageFile,
+      storage,
       adapter: {
         recognize: vi.fn().mockResolvedValue({
           rawText: "This is a sentence .\n\nSecond paragraph.",
@@ -44,10 +48,15 @@ describe("processOcrUpload", () => {
         fileName: "essay.png",
         mimeType: "image/png",
         sizeBytes: imageFile.size,
+        storageKey: "file://uploads/user-1/essay.png",
         ocrStatus: "READY",
         rawText: "This is a sentence .\n\nSecond paragraph.",
         normalizedText: "This is a sentence.\n\nSecond paragraph."
       })
+    });
+    expect(storage.save).toHaveBeenCalledWith({
+      userId: "user-1",
+      file: imageFile
     });
     expect(result.normalizedText).toBe("This is a sentence.\n\nSecond paragraph.");
   });

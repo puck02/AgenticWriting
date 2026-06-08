@@ -3,6 +3,10 @@ import type { Prisma } from "@prisma/client";
 import type { UploadPurposeValue } from "@/domain/uploads";
 import { normalizeOcrText } from "@/services/ocr/text-normalizer";
 import type { ModelProvider } from "@/services/review/model-provider";
+import {
+  LocalUploadFileStorage,
+  type UploadFileStorage
+} from "@/services/uploads/upload-storage";
 
 const maxUploadBytes = 5 * 1024 * 1024;
 
@@ -64,16 +68,19 @@ export async function processOcrUpload({
   userId,
   purpose,
   file,
-  adapter
+  adapter,
+  storage = new LocalUploadFileStorage()
 }: {
   db: OcrDb;
   userId: string;
   purpose: UploadPurposeValue;
   file: File;
   adapter: OcrAdapter;
+  storage?: UploadFileStorage;
 }) {
   validateImageFile(file);
 
+  const storageKey = await storage.save({ userId, file });
   const recognized = await adapter.recognize(file);
   const normalizedText = normalizeOcrText(recognized.rawText);
   const upload = await db.uploadAsset.create({
@@ -83,7 +90,7 @@ export async function processOcrUpload({
       fileName: file.name,
       mimeType: file.type,
       sizeBytes: file.size,
-      storageKey: `local://${userId}/${Date.now()}-${file.name}`,
+      storageKey,
       ocrStatus: "READY",
       rawText: recognized.rawText,
       normalizedText

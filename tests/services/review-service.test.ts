@@ -155,6 +155,9 @@ describe("saveReviewedEssay", () => {
       },
       errorPattern: {
         upsert: vi.fn().mockResolvedValue({})
+      },
+      uploadAsset: {
+        updateMany: vi.fn().mockResolvedValue({ count: 2 })
       }
     };
     const db = {
@@ -168,6 +171,7 @@ describe("saveReviewedEssay", () => {
       essayType: "ENGLISH_ONE_PICTURE",
       prompt: "读书的重要性",
       content: "People should read more books.",
+      uploadAssetIds: ["upload-1", "upload-2"],
       review: validReview
     });
 
@@ -221,6 +225,16 @@ describe("saveReviewedEssay", () => {
         deletedAt: null
       }
     });
+    expect(tx.uploadAsset.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: { in: ["upload-1", "upload-2"] },
+        userId: "user-1",
+        essayId: null
+      },
+      data: {
+        essayId: "essay-1"
+      }
+    });
   });
 
   it("uses a transaction client for essay and error pattern writes", async () => {
@@ -230,6 +244,9 @@ describe("saveReviewedEssay", () => {
       },
       errorPattern: {
         upsert: vi.fn().mockResolvedValue({})
+      },
+      uploadAsset: {
+        updateMany: vi.fn().mockResolvedValue({ count: 0 })
       }
     };
     const db = {
@@ -238,6 +255,9 @@ describe("saveReviewedEssay", () => {
       },
       errorPattern: {
         upsert: vi.fn().mockRejectedValue(new Error("root upsert should not be called"))
+      },
+      uploadAsset: {
+        updateMany: vi.fn().mockRejectedValue(new Error("root upload update should not be called"))
       },
       $transaction: vi.fn(async (callback) => callback(tx))
     };
@@ -253,7 +273,9 @@ describe("saveReviewedEssay", () => {
 
     expect(db.essay.create).not.toHaveBeenCalled();
     expect(db.errorPattern.upsert).not.toHaveBeenCalled();
+    expect(db.uploadAsset.updateMany).not.toHaveBeenCalled();
     expect(tx.essay.create).toHaveBeenCalledOnce();
     expect(tx.errorPattern.upsert).toHaveBeenCalledOnce();
+    expect(tx.uploadAsset.updateMany).not.toHaveBeenCalled();
   });
 });

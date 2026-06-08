@@ -10,6 +10,9 @@ type EssayDb<EssayResult> = {
   errorPattern: {
     upsert(args: Prisma.ErrorPatternUpsertArgs): Promise<unknown>;
   };
+  uploadAsset: {
+    updateMany(args: Prisma.UploadAssetUpdateManyArgs): Promise<unknown>;
+  };
   $transaction<Result>(
     callback: (tx: EssayTransactionDb<EssayResult>) => Promise<Result>
   ): Promise<Result>;
@@ -22,14 +25,18 @@ type EssayTransactionDb<EssayResult> = {
   errorPattern: {
     upsert(args: Prisma.ErrorPatternUpsertArgs): Promise<unknown>;
   };
+  uploadAsset: {
+    updateMany(args: Prisma.UploadAssetUpdateManyArgs): Promise<unknown>;
+  };
 };
 
-export async function saveReviewedEssay<EssayResult>({
+export async function saveReviewedEssay<EssayResult extends { id: string }>({
   db,
   userId,
   essayType,
   prompt,
   content,
+  uploadAssetIds = [],
   review
 }: {
   db: EssayDb<EssayResult>;
@@ -37,6 +44,7 @@ export async function saveReviewedEssay<EssayResult>({
   essayType: EssayTypeValue;
   prompt: string;
   content: string;
+  uploadAssetIds?: string[];
   review: ReviewResult;
 }): Promise<EssayResult> {
   return db.$transaction(async (tx) => {
@@ -64,6 +72,21 @@ export async function saveReviewedEssay<EssayResult>({
         suggestions: true
       }
     });
+
+    const uniqueUploadAssetIds = Array.from(new Set(uploadAssetIds));
+
+    if (uniqueUploadAssetIds.length > 0) {
+      await tx.uploadAsset.updateMany({
+        where: {
+          id: { in: uniqueUploadAssetIds },
+          userId,
+          essayId: null
+        },
+        data: {
+          essayId: essay.id
+        }
+      });
+    }
 
     await Promise.all(
       review.errorPatterns.map((label) =>

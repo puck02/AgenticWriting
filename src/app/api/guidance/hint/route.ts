@@ -1,19 +1,18 @@
-import type { WritingPreference, ErrorPattern, ExpressionAsset } from "@prisma/client";
+import type { ErrorPattern, ExpressionAsset, WritingPreference } from "@prisma/client";
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 
 import { essayTypes } from "@/domain/labels";
-import { reviewModels } from "@/domain/models";
 import type { MemorySnapshot } from "@/domain/memory";
+import { reviewModels } from "@/domain/models";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import {
   getEffectiveModelSettings,
   normalizeReviewModel
 } from "@/services/ai/model-settings-service";
-import { saveReviewedEssay } from "@/services/essay/essay-service";
-import { createReviewerFromEnv } from "@/services/review/reviewer-factory";
-import { reviewEssayDraft } from "@/services/review/review-service";
+import { generateWritingHint } from "@/services/guidance/guidance-service";
+import { FetchModelProvider } from "@/services/review/model-provider";
 
 const essayTypeValues = essayTypes.map((essayType) => essayType.value) as [
   (typeof essayTypes)[number]["value"],
@@ -24,20 +23,19 @@ const reviewModelValues = reviewModels.map((model) => model.value) as [
   ...(typeof reviewModels)[number]["value"][]
 ];
 
-const createEssaySchema = z.object({
+const hintRequestSchema = z.object({
   essayType: z.enum(essayTypeValues),
   prompt: z.string().min(1),
-  content: z.string().min(1),
-  uploadAssetIds: z.array(z.string().min(1)).optional().default([]),
+  draft: z.string().min(1),
   reviewModel: z.enum(reviewModelValues).optional()
 });
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);
-  const parsedBody = createEssaySchema.safeParse(body);
+  const parsedBody = hintRequestSchema.safeParse(body);
 
   if (!parsedBody.success) {
-    return NextResponse.json({ error: "Invalid essay payload" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid hint payload" }, { status: 400 });
   }
 
   const user = await getCurrentUser(db);
@@ -46,35 +44,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { essayType, prompt, content, uploadAssetIds } = parsedBody.data;
   const modelSettings = await getEffectiveModelSettings(db);
-  const reviewModel = normalizeReviewModel(
+  const model = normalizeReviewModel(
     parsedBody.data.reviewModel ?? modelSettings?.defaultModel
   );
+  const baseUrl = modelSettings?.baseUrl ?? process.env.MODEL_API_BASE_URL;
+  const apiKey = modelSettings?.apiKey ?? process.env.MODEL_API_KEY;
+
+  if (!baseUrl || !apiKey) {
+    return NextResponse.json({ error: "模型设置未完成。" }, { status: 400 });
+  }
+
   const memory = await loadMemory(user.id);
-  const review = await reviewEssayDraft({
-    reviewer: createReviewerFromEnv({
-      ...process.env,
-      MODEL_API_BASE_URL: modelSettings?.baseUrl ?? process.env.MODEL_API_BASE_URL,
-      MODEL_API_KEY: modelSettings?.apiKey ?? process.env.MODEL_API_KEY,
-      MODEL_NAME: reviewModel
-    }),
-    essayType,
-    prompt,
-    content,
+  const hint = await generateWritingHint({
+    provider: new FetchModelProvider({ baseUrl, apiKey, model }),
+    essayType: parsedBody.data.essayType,
+    prompt: parsedBody.data.prompt,
+    draft: parsedBody.data.draft,
     memory
   });
-  const essay = await saveReviewedEssay({
-    db,
-    userId: user.id,
-    essayType,
-    prompt,
-    content,
-    uploadAssetIds,
-    review
-  });
 
-  return NextResponse.json({ essayId: essay.id });
+  return NextResponse.json({ hint });
 }
 
 async function loadMemory(userId: string): Promise<MemorySnapshot> {

@@ -199,6 +199,41 @@ input {
   background: rgba(130, 213, 187, 0.24);
 }
 
+.mode-toggle-button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #725d42;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 900;
+  padding: 0 0.9rem;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.mode-toggle-button:hover {
+  transform: translateY(-1px);
+}
+
+.mode-toggle-button:active {
+  transform: translateY(1px);
+}
+
+.mode-toggle-button:focus-visible {
+  outline: 3px solid rgba(25, 200, 185, 0.28);
+  outline-offset: 2px;
+}
+
+.mode-toggle-button-active {
+  background: #f7cd67;
+  color: #3f3426;
+}
+
 .island-select {
   min-height: 42px;
   width: 100%;
@@ -512,6 +547,37 @@ input {
 .review-feedback-badge-rejected {
   background: rgba(114, 93, 66, 0.1);
   color: #725d42;
+}
+
+.coach-panel {
+  border: 2px solid rgba(130, 213, 187, 0.24);
+  border-radius: 18px;
+  background: rgba(255, 253, 244, 0.62);
+  padding: 0.85rem;
+}
+
+.coach-summary {
+  display: grid;
+  gap: 0.75rem;
+  border: 2px solid rgba(130, 213, 187, 0.28);
+  border-radius: 18px;
+  background: rgba(130, 213, 187, 0.16);
+  padding: 0.85rem;
+}
+
+.essay-upload-card {
+  overflow: hidden;
+  border: 2px solid rgba(114, 93, 66, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 253, 244, 0.82);
+}
+
+.essay-upload-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: rgba(114, 93, 66, 0.08);
 }
 
 @keyframes review-sentence-fresh {

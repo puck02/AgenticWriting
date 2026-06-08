@@ -2,9 +2,11 @@ import { AppNav } from "@/components/AppNav";
 import { EssaySubmitForm } from "@/components/EssaySubmitForm";
 import { db } from "@/lib/db";
 import { requireCurrentUser } from "@/lib/session";
+import { getPublicModelSettings } from "@/services/ai/model-settings-service";
 
 export default async function HomePage() {
   const user = await requireCurrentUser(db);
+  const modelSettings = await getPublicModelSettings({ db });
 
   return (
     <main className="writing-shell min-h-screen">
@@ -20,7 +22,7 @@ export default async function HomePage() {
               提交题目和正文后，系统会给出总分、摘要和逐句表达建议，并根据你的采纳反馈沉淀个人画像。
             </p>
           </div>
-          <EssaySubmitForm />
+          <EssaySubmitForm defaultModel={modelSettings.defaultModel} />
         </div>
 
         <aside className="space-y-4">

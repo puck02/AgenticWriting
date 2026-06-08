@@ -6,6 +6,10 @@ import { uploadImageForOcr } from "@/services/ocr/upload-client";
 
 type OcrPurpose = "PROMPT" | "CONTENT";
 type OcrUploadStatus = "idle" | "uploading" | "ready" | "failed";
+export type OcrRecognizedUpload = {
+  uploadId: string | null;
+  normalizedText: string;
+};
 
 export function OcrUploadControl({
   purpose,
@@ -14,7 +18,7 @@ export function OcrUploadControl({
 }: {
   purpose: OcrPurpose;
   label: string;
-  onRecognized(text: string): void;
+  onRecognized(upload: OcrRecognizedUpload): void;
 }) {
   const [status, setStatus] = useState<OcrUploadStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -30,8 +34,8 @@ export function OcrUploadControl({
     setMessage("正在识别图片文字...");
 
     try {
-      const recognizedText = await uploadImageForOcr({ purpose, file });
-      onRecognized(recognizedText);
+      const recognized = await uploadImageForOcr({ purpose, file });
+      onRecognized(recognized);
       setStatus("ready");
       setMessage("识别完成，请核对后再提交。");
     } catch (error) {

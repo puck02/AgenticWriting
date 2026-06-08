@@ -20,6 +20,7 @@ describe("uploadImageForOcr", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({
+        uploadId: "upload-1",
         normalizedText: "Recognized text."
       })
     });
@@ -32,7 +33,10 @@ describe("uploadImageForOcr", () => {
     const [, init] = fetchMock.mock.calls[0];
     const body = init.body as FormData;
 
-    expect(result).toBe("Recognized text.");
+    expect(result).toEqual({
+      uploadId: "upload-1",
+      normalizedText: "Recognized text."
+    });
     expect(mocks.prepareImageForOcr).toHaveBeenCalledWith(originalFile);
     expect(body.get("file")).toBe(compressedFile);
   });

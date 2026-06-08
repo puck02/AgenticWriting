@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import {
+  useEffect,
   useState,
   type ClipboardEvent,
   type Dispatch,
@@ -15,8 +16,16 @@ import {
   IslandGlyph,
   IslandSelect
 } from "@/components/IslandUi";
-import { OcrUploadControl } from "@/components/OcrUploadControl";
+import {
+  OcrUploadControl,
+  type OcrRecognizedUpload
+} from "@/components/OcrUploadControl";
 import { essayTypes, type EssayTypeValue } from "@/domain/labels";
+import {
+  defaultReviewModel,
+  reviewModels,
+  type ReviewModelValue
+} from "@/domain/models";
 import type { UploadPurposeValue } from "@/domain/uploads";
 import { uploadImageForOcr } from "@/services/ocr/upload-client";
 
@@ -27,11 +36,34 @@ type PasteOcrState = {
   message: string | null;
 };
 
-export function EssaySubmitForm() {
+type WritingMode = "review" | "guidance";
+
+type WritingHint = {
+  completion: string;
+  reason: string;
+  expressionFocus: string;
+  styleNote: string;
+  referenceLabel: string;
+};
+
+export function EssaySubmitForm({
+  defaultModel = defaultReviewModel,
+  hintDelayMs = 1200
+}: {
+  defaultModel?: ReviewModelValue;
+  hintDelayMs?: number;
+} = {}) {
   const router = useRouter();
+  const [writingMode, setWritingMode] = useState<WritingMode>("review");
   const [essayType, setEssayType] = useState<EssayTypeValue>(essayTypes[0].value);
+  const [reviewModel, setReviewModel] = useState<ReviewModelValue>(defaultModel);
   const [prompt, setPrompt] = useState("");
   const [content, setContent] = useState("");
+  const [hint, setHint] = useState<WritingHint | null>(null);
+  const [isHintPending, setIsHintPending] = useState(false);
+  const [hintError, setHintError] = useState<string | null>(null);
+  const [lastHintDraft, setLastHintDraft] = useState("");
+  const [uploadAssetIds, setUploadAssetIds] = useState<string[]>([]);
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [promptPasteOcr, setPromptPasteOcr] = useState<PasteOcrState>({
@@ -51,9 +83,39 @@ export function EssaySubmitForm() {
     hasPrompt,
     hasContent,
     isOcrUploading,
-    isPending
+    isPending,
+    writingMode
   });
   const contentWordCount = countEnglishWords(content);
+
+  useEffect(() => {
+    if (
+      writingMode !== "guidance" ||
+      !hasPrompt ||
+      !hasContent ||
+      isHintPending ||
+      content.trim() === lastHintDraft
+    ) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      void requestWritingHint();
+    }, hintDelayMs);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    content,
+    essayType,
+    hasContent,
+    hasPrompt,
+    isHintPending,
+    hintDelayMs,
+    lastHintDraft,
+    prompt,
+    reviewModel,
+    writingMode
+  ]);
 
   async function handleImagePaste({
     event,
@@ -81,8 +143,9 @@ export function EssaySubmitForm() {
     });
 
     try {
-      const recognizedText = await uploadImageForOcr({ purpose, file });
-      setText(recognizedText);
+      const recognized = await uploadImageForOcr({ purpose, file });
+      setText(recognized.normalizedText);
+      recordUploadAssetId(recognized.uploadId);
       setPasteOcr({
         status: "ready",
         message: `${targetName}图片已识别，请核对后再提交。`
@@ -110,7 +173,13 @@ export function EssaySubmitForm() {
       const response = await fetch("/api/essays", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ essayType, prompt, content })
+        body: JSON.stringify({
+          essayType,
+          prompt,
+          content,
+          uploadAssetIds,
+          reviewModel
+        })
       });
 
       if (!response.ok) {
@@ -134,8 +203,106 @@ export function EssaySubmitForm() {
     }
   }
 
+  async function requestWritingHint() {
+    setIsHintPending(true);
+    setHintError(null);
+    setLastHintDraft(content.trim());
+
+    try {
+      const response = await fetch("/api/guidance/hint", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          essayType,
+          prompt,
+          draft: content,
+          reviewModel
+        })
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        hint?: WritingHint;
+        error?: string;
+      };
+
+      if (!response.ok || !data.hint) {
+        throw new Error(data.error ?? "hint 生成失败");
+      }
+
+      setHint(data.hint);
+    } catch (error) {
+      setHintError(error instanceof Error ? error.message : "hint 生成失败");
+    } finally {
+      setIsHintPending(false);
+    }
+  }
+
+  function applyHint() {
+    if (!hint) {
+      return;
+    }
+
+    setContent((currentContent) =>
+      `${currentContent.trimEnd()} ${hint.completion}`.trimStart()
+    );
+    setHint(null);
+    setHintError(null);
+  }
+
+  function recordUploadAssetId(uploadId: string | null) {
+    if (!uploadId) {
+      return;
+    }
+
+    setUploadAssetIds((currentIds) =>
+      currentIds.includes(uploadId) ? currentIds : [...currentIds, uploadId]
+    );
+  }
+
+  function applyRecognizedPrompt(upload: OcrRecognizedUpload) {
+    setPrompt(upload.normalizedText);
+    recordUploadAssetId(upload.uploadId);
+  }
+
+  function applyRecognizedContent(upload: OcrRecognizedUpload) {
+    setContent(upload.normalizedText);
+    recordUploadAssetId(upload.uploadId);
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      <div
+        className="inline-flex rounded-full border-2 border-[#725d42]/10 bg-[#fffdf4]/75 p-1"
+        role="group"
+        aria-label="写作模式"
+      >
+        <button
+          type="button"
+          className={[
+            "mode-toggle-button",
+            writingMode === "review" ? "mode-toggle-button-active" : ""
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          aria-pressed={writingMode === "review"}
+          onClick={() => setWritingMode("review")}
+        >
+          批改模式
+        </button>
+        <button
+          type="button"
+          className={[
+            "mode-toggle-button",
+            writingMode === "guidance" ? "mode-toggle-button-active" : ""
+          ]
+            .filter(Boolean)
+            .join(" ")}
+          aria-pressed={writingMode === "guidance"}
+          onClick={() => setWritingMode("guidance")}
+        >
+          引导模式
+        </button>
+      </div>
+
       <fieldset disabled={isPending} className="space-y-5">
         <IslandCard color="yellow" className="space-y-3 p-4">
           <label
@@ -158,6 +325,30 @@ export function EssaySubmitForm() {
           </IslandSelect>
         </IslandCard>
 
+        <IslandCard color="teal" className="space-y-3 p-4">
+          <label
+            htmlFor="reviewModel"
+            className="flex items-center gap-2 text-sm font-bold text-[#725d42]"
+          >
+            <IslandGlyph label="模型">M</IslandGlyph>
+            批改模型
+          </label>
+          <IslandSelect
+            id="reviewModel"
+            aria-label="批改模型"
+            value={reviewModel}
+            onChange={(event) =>
+              setReviewModel(event.target.value as ReviewModelValue)
+            }
+          >
+            {reviewModels.map((model) => (
+              <option key={model.value} value={model.value}>
+                {model.label}
+              </option>
+            ))}
+          </IslandSelect>
+        </IslandCard>
+
         <div>
           <label
             htmlFor="prompt"
@@ -170,7 +361,7 @@ export function EssaySubmitForm() {
             <OcrUploadControl
               purpose="PROMPT"
               label="上传题目图片识别"
-              onRecognized={(text) => setPrompt(text)}
+              onRecognized={applyRecognizedPrompt}
             />
           </div>
           <textarea
@@ -217,7 +408,7 @@ export function EssaySubmitForm() {
             <OcrUploadControl
               purpose="CONTENT"
               label="上传正文图片识别"
-              onRecognized={(text) => setContent(text)}
+              onRecognized={applyRecognizedContent}
             />
           </div>
           <textarea
@@ -249,6 +440,42 @@ export function EssaySubmitForm() {
             >
               {contentPasteOcr.message}
             </p>
+          ) : null}
+          {writingMode === "guidance" ? (
+            <div className="mt-3 rounded-[18px] border-2 border-[#82d5bb]/35 bg-[#82d5bb]/15 p-3">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-xs font-black text-[#14866d]">
+                    {isHintPending ? "正在生成 hint..." : "写作 hint"}
+                  </p>
+                  {hint ? (
+                    <>
+                      <p className="mt-2 text-sm font-black leading-6 text-[#3f3426]">
+                        {hint.completion}
+                      </p>
+                      <p className="mt-2 text-xs leading-5 text-[#725d42]">
+                        {hint.reason} · {hint.styleNote}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="mt-2 text-sm leading-6 text-[#725d42]">
+                      停顿后会自动给出一句可采纳的英文补全。
+                    </p>
+                  )}
+                  {hintError ? (
+                    <p className="mt-2 text-xs font-bold text-red-700">{hintError}</p>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  className="review-copy-button whitespace-nowrap"
+                  disabled={!hint}
+                  onClick={applyHint}
+                >
+                  采纳 hint
+                </button>
+              </div>
+            </div>
           ) : null}
         </div>
       </fieldset>
@@ -305,12 +532,14 @@ function getReadinessMessage({
   hasPrompt,
   hasContent,
   isOcrUploading,
-  isPending
+  isPending,
+  writingMode
 }: {
   hasPrompt: boolean;
   hasContent: boolean;
   isOcrUploading: boolean;
   isPending: boolean;
+  writingMode: WritingMode;
 }) {
   if (isPending) {
     return "正在生成批改，请保持本页打开。";
@@ -330,6 +559,10 @@ function getReadinessMessage({
 
   if (!hasContent) {
     return "补全作文正文后即可提交。";
+  }
+
+  if (writingMode === "guidance") {
+    return "引导模式已开启，停顿后会给出一句 hint，也可以随时提交批改。";
   }
 
   return "可以提交，批改会同时更新你的写作画像。";

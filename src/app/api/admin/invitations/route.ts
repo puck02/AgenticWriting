@@ -7,7 +7,7 @@ import { AuthError, createInvitationCode } from "@/services/auth/auth-service";
 export async function GET() {
   const user = await getCurrentUser(db);
 
-  if (!isAdminUser(user)) {
+  if (!user || !isAdminUser(user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -38,12 +38,17 @@ export async function GET() {
 export async function POST() {
   const user = await getCurrentUser(db);
 
-  if (!isAdminUser(user)) {
+  if (!user || !isAdminUser(user)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const adminUser = {
+    id: user.id,
+    role: user.role
+  };
+
   try {
-    const { code, invitation } = await createInvitationCode(db, user);
+    const { code, invitation } = await createInvitationCode(db, adminUser);
 
     return NextResponse.json({
       code,

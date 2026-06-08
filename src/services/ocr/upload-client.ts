@@ -7,7 +7,7 @@ export async function uploadImageForOcr({
 }: {
   purpose: UploadPurposeValue;
   file: File;
-}): Promise<string> {
+}): Promise<{ uploadId: string | null; normalizedText: string }> {
   const uploadFile = await prepareImageForOcr(file);
   const formData = new FormData();
   formData.set("purpose", purpose);
@@ -18,6 +18,7 @@ export async function uploadImageForOcr({
     body: formData
   });
   const data = (await response.json()) as {
+    uploadId?: string | null;
     normalizedText?: string;
     error?: string;
   };
@@ -26,5 +27,8 @@ export async function uploadImageForOcr({
     throw new Error(data.error ?? "图片识别失败");
   }
 
-  return data.normalizedText;
+  return {
+    uploadId: data.uploadId ?? null,
+    normalizedText: data.normalizedText
+  };
 }

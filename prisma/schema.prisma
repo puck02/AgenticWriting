@@ -24,6 +24,15 @@ model User {
   memoryEvents     MemoryEvent[]
 }
 
+model AiModelSetting {
+  id           String   @id
+  baseUrl      String
+  apiKey       String
+  defaultModel String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model AuthSession {
   id        String   @id @default(cuid())
   tokenHash String   @unique
@@ -63,6 +72,7 @@ model Essay {
   createdAt     DateTime           @default(now())
   user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   suggestions   ReviewSuggestion[]
+  uploadAssets  UploadAsset[]
   aiRuns        AiRun[]
 
   @@index([userId, createdAt])
@@ -138,6 +148,7 @@ model ExpressionAsset {
 model UploadAsset {
   id             String        @id @default(cuid())
   userId         String
+  essayId        String?
   purpose        UploadPurpose
   fileName       String
   mimeType       String
@@ -149,10 +160,12 @@ model UploadAsset {
   errorMessage   String?
   createdAt      DateTime      @default(now())
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  essay          Essay?        @relation(fields: [essayId], references: [id], onDelete: SetNull)
   aiRuns         AiRun[]
 
   @@index([userId, purpose, createdAt])
   @@index([userId, ocrStatus])
+  @@index([essayId, purpose, createdAt])
 }
 
 model AiRun {

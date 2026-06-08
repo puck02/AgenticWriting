@@ -100,4 +100,24 @@ describe("SuggestionCard", () => {
     expect(screen.getByTestId("suggestion-added-token-suggestion-1-plays")).toBeTruthy();
     expect(screen.getByTestId("suggestion-added-token-suggestion-1-progress")).toBeTruthy();
   });
+
+  it("shows coaching prompts that help users learn the revision pattern", () => {
+    render(
+      <SuggestionCard
+        essayId="essay-1"
+        suggestionId="suggestion-1"
+        originalSentence="Practice is important."
+        suggestedSentence="Consistent practice plays an important role in progress."
+        reason="用更具体的搭配表达观点。"
+        profileExplanation="你更接受稳妥正式表达。"
+        accepted={null}
+        rejectLabel={null}
+      />
+    );
+
+    expect(screen.getByText("表达拆解")).toBeTruthy();
+    expect(screen.getByText("迁移练习")).toBeTruthy();
+    expect(screen.getByText(/把你下一句里的核心名词换进去/)).toBeTruthy();
+    expect(screen.getAllByText(/你更接受稳妥正式表达/).length).toBeGreaterThan(0);
+  });
 });

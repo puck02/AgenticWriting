@@ -21,7 +21,11 @@ export function AppNav({ user }: { user?: AppNavUser | null }) {
   const router = useRouter();
   const visibleNavItems =
     user?.role === "ADMIN"
-      ? [...navItems, { href: "/admin/invites", label: "邀请码" }]
+      ? [
+          ...navItems,
+          { href: "/admin/invites", label: "邀请码" },
+          { href: "/admin/settings", label: "模型设置" }
+        ]
       : navItems;
 
   async function handleLogout() {

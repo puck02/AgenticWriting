@@ -89,6 +89,11 @@ export function InteractiveEssayReview({
   const pendingSuggestions = suggestions.filter(
     (suggestion) => getFeedbackStatus(feedbackStatuses, suggestion) === "pending"
   );
+  const activeSuggestion =
+    suggestions.find((suggestion) => suggestion.id === activeSuggestionId) ??
+    pendingSuggestions[0] ??
+    suggestions[0] ??
+    null;
 
   function saveFeedbackStatus({
     suggestionId,
@@ -298,6 +303,20 @@ export function InteractiveEssayReview({
               下一条待处理
             </button>
           </div>
+
+          {activeSuggestion ? (
+            <div className="coach-summary mt-4">
+              <div>
+                <p className="text-xs font-black text-[#14866d]">当前学习目标</p>
+                <p className="mt-1 text-sm font-black leading-6 text-[#3f3426]">
+                  {activeSuggestion.reason}
+                </p>
+              </div>
+              <p className="text-sm leading-6 text-[#725d42]">
+                先理解，再决定是否采纳。
+              </p>
+            </div>
+          ) : null}
 
           <div
             className="review-mini-map mt-4"

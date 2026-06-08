@@ -245,4 +245,22 @@ describe("InteractiveEssayReview", () => {
       "review-sentence-active"
     );
   });
+
+  it("shows the active suggestion coach summary in the review workflow", () => {
+    render(
+      <InteractiveEssayReview
+        essayId="essay-1"
+        content={
+          "Practice is important.\nStudents should keep trying.\nTeachers can give help."
+        }
+        suggestions={[baseSuggestion, acceptedSuggestion, rejectedSuggestion]}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId("review-sentence-suggestion-1"));
+
+    expect(screen.getByText("当前学习目标")).toBeTruthy();
+    expect(screen.getAllByText("表达更正式。").length).toBeGreaterThan(0);
+    expect(screen.getByText("先理解，再决定是否采纳。")).toBeTruthy();
+  });
 });

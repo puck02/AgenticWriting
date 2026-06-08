@@ -57,6 +57,10 @@ export function SuggestionCard({
           : status === "rejected"
             ? "已记录不采纳原因。"
             : "选择后会更新你的写作画像。";
+  const coachingPattern = inferCoachingPattern({
+    originalSentence,
+    suggestedSentence
+  });
 
   async function submitFeedback({
     nextAccepted,
@@ -181,6 +185,29 @@ export function SuggestionCard({
           ) : null}
         </div>
 
+        <div className="mt-4 grid gap-3 border-t-2 border-[#725d42]/10 pt-4 md:grid-cols-2">
+          <section className="coach-panel">
+            <p className="text-xs font-black text-[#14866d]">表达拆解</p>
+            <p className="mt-2 text-sm leading-6 text-[#3f3426]">
+              {coachingPattern}
+            </p>
+            {profileExplanation ? (
+              <p className="mt-2 text-xs leading-5 text-[#725d42]">
+                {profileExplanation}
+              </p>
+            ) : null}
+          </section>
+          <section className="coach-panel">
+            <p className="text-xs font-black text-[#14866d]">迁移练习</p>
+            <p className="mt-2 text-sm leading-6 text-[#3f3426]">
+              把你下一句里的核心名词换进去，再用同一个结构写一句。
+            </p>
+            <p className="mt-2 text-xs leading-5 text-[#725d42]">
+              先保留句意，再只替换一个表达点。
+            </p>
+          </section>
+        </div>
+
         <div className="mt-4 flex flex-col gap-3 border-t-2 border-[#725d42]/10 pt-4 md:flex-row md:items-center md:justify-between">
           <div className="grid gap-2 sm:grid-cols-[auto_13rem_auto] sm:items-center">
             <IslandButton
@@ -286,4 +313,21 @@ function tokenizeWords(sentence: string) {
 
 function normalizeToken(token: string) {
   return token.toLowerCase().replace(/[^a-z0-9'-]/g, "");
+}
+
+function inferCoachingPattern({
+  originalSentence,
+  suggestedSentence
+}: {
+  originalSentence: string;
+  suggestedSentence: string;
+}) {
+  const originalWords = tokenizeWords(originalSentence).length;
+  const suggestedWords = tokenizeWords(suggestedSentence).length;
+
+  if (suggestedWords > originalWords + 4) {
+    return "这条建议把单薄判断扩展成“核心名词 + 动作/作用 + 结果”的句式。";
+  }
+
+  return "这条建议保留原意，只把表达换成更符合考研写作的稳妥搭配。";
 }

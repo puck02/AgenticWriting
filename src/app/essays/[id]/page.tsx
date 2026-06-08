@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AppNav } from "@/components/AppNav";
+import { EssayUploadGallery } from "@/components/EssayUploadGallery";
 import { InteractiveEssayReview } from "@/components/InteractiveEssayReview";
 import { essayTypes } from "@/domain/labels";
 import { db } from "@/lib/db";
@@ -17,6 +18,9 @@ export default async function EssayDetailPage({
     where: { id, userId: user.id },
     include: {
       suggestions: {
+        orderBy: { createdAt: "asc" }
+      },
+      uploadAssets: {
         orderBy: { createdAt: "asc" }
       }
     }
@@ -73,6 +77,16 @@ export default async function EssayDetailPage({
             </div>
           </div>
         </section>
+
+        <EssayUploadGallery
+          uploads={essay.uploadAssets.map((upload) => ({
+            id: upload.id,
+            purpose: upload.purpose,
+            fileName: upload.fileName,
+            mimeType: upload.mimeType,
+            normalizedText: upload.normalizedText
+          }))}
+        />
 
         <InteractiveEssayReview
           essayId={essay.id}

@@ -23,6 +23,7 @@ describe("OcrUploadControl", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({
+        uploadId: "upload-1",
         normalizedText: "Recognized essay text."
       })
     });
@@ -45,7 +46,10 @@ describe("OcrUploadControl", () => {
     });
 
     await waitFor(() => {
-      expect(onRecognized).toHaveBeenCalledWith("Recognized essay text.");
+      expect(onRecognized).toHaveBeenCalledWith({
+        uploadId: "upload-1",
+        normalizedText: "Recognized essay text."
+      });
     });
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/uploads/ocr",
