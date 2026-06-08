@@ -18,11 +18,11 @@
     "@prisma/client": "latest",
     "animal-island-ui": "^0.9.6",
     "clsx": "latest",
-    "next": "latest",
+    "next": "15.5.19",
     "pg": "^8.21.0",
     "prisma": "latest",
-    "react": "latest",
-    "react-dom": "latest",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "zod": "latest"
   },
   "devDependencies": {
