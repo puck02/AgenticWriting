@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { rejectLabels } from "@/domain/labels";
 import { db } from "@/lib/db";
-import { canAccessUserResource, getOrCreateCurrentUser } from "@/lib/session";
+import { canAccessUserResource, getCurrentUser } from "@/lib/session";
 import { recordSuggestionResponse } from "@/services/feedback/feedback-service";
 
 const rejectLabelValues = rejectLabels.map((rejectLabel) => rejectLabel.value) as [
@@ -34,7 +34,12 @@ export async function POST(
     return NextResponse.json({ error: "Invalid feedback payload" }, { status: 400 });
   }
 
-  const user = await getOrCreateCurrentUser(db);
+  const user = await getCurrentUser(db);
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { suggestionId, accepted, rejectLabel } = parsedBody.data;
   const suggestion = await db.reviewSuggestion.findUnique({
     where: { id: suggestionId },

@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 
 import { db } from "@/lib/db";
-import { getOrCreateCurrentUser } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 
 export async function GET() {
-  const user = await getOrCreateCurrentUser(db);
+  const user = await getCurrentUser(db);
 
-  return NextResponse.json({ userId: user.id });
+  return NextResponse.json({
+    user: user
+      ? {
+          id: user.id,
+          email: user.email,
+          role: user.role
+        }
+      : null
+  });
 }

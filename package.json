@@ -9,6 +9,7 @@
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
     "lint": "tsc --noEmit",
+    "auth:ensure-admin": "node scripts/ensure-admin.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },

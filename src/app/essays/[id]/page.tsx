@@ -4,7 +4,7 @@ import { AppNav } from "@/components/AppNav";
 import { InteractiveEssayReview } from "@/components/InteractiveEssayReview";
 import { essayTypes } from "@/domain/labels";
 import { db } from "@/lib/db";
-import { getOrCreateCurrentUser } from "@/lib/session";
+import { requireCurrentUser } from "@/lib/session";
 
 export default async function EssayDetailPage({
   params
@@ -12,7 +12,7 @@ export default async function EssayDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getOrCreateCurrentUser(db);
+  const user = await requireCurrentUser(db);
   const essay = await db.essay.findFirst({
     where: { id, userId: user.id },
     include: {
@@ -38,7 +38,7 @@ export default async function EssayDetailPage({
 
   return (
     <main className="min-h-screen bg-paper">
-      <AppNav />
+      <AppNav user={user} />
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

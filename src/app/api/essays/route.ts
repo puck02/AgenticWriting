@@ -5,7 +5,7 @@ import { z } from "zod";
 import { essayTypes } from "@/domain/labels";
 import type { MemorySnapshot } from "@/domain/memory";
 import { db } from "@/lib/db";
-import { getOrCreateCurrentUser } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 import { saveReviewedEssay } from "@/services/essay/essay-service";
 import { createReviewerFromEnv } from "@/services/review/reviewer-factory";
 import { reviewEssayDraft } from "@/services/review/review-service";
@@ -29,7 +29,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid essay payload" }, { status: 400 });
   }
 
-  const user = await getOrCreateCurrentUser(db);
+  const user = await getCurrentUser(db);
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { essayType, prompt, content } = parsedBody.data;
   const memory = await loadMemory(user.id);
   const review = await reviewEssayDraft({

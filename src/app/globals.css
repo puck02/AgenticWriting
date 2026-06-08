@@ -61,6 +61,27 @@ input {
   font: inherit;
 }
 
+.auth-input {
+  min-height: 46px;
+  width: 100%;
+  border: 2px solid rgba(114, 93, 66, 0.2);
+  border-radius: 18px;
+  background: rgba(255, 253, 244, 0.92);
+  color: #3f3426;
+  outline: none;
+  padding: 0 1rem;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.auth-input:focus {
+  border-color: rgba(130, 213, 187, 0.88);
+  background: #fffdf4;
+  box-shadow: 0 0 0 4px rgba(130, 213, 187, 0.18);
+}
+
 .island-button {
   position: relative;
   display: inline-flex;
@@ -116,6 +137,30 @@ input {
   border-color: rgba(25, 200, 185, 0.7);
   background: #fffdf4;
   color: #14866d;
+}
+
+.nav-logout-button {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(114, 93, 66, 0.08);
+  color: #725d42;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+  padding: 0.35rem 0.65rem;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+
+.nav-logout-button:hover {
+  background: rgba(25, 200, 185, 0.14);
+  color: #14866d;
+}
+
+.nav-logout-button:focus-visible {
+  outline: 3px solid rgba(25, 200, 185, 0.3);
+  outline-offset: 2px;
 }
 
 .island-button-small {

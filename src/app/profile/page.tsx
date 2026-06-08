@@ -1,10 +1,10 @@
 import { AppNav } from "@/components/AppNav";
 import { essayTypes } from "@/domain/labels";
 import { db } from "@/lib/db";
-import { getOrCreateCurrentUser } from "@/lib/session";
+import { requireCurrentUser } from "@/lib/session";
 
 export default async function ProfilePage() {
-  const user = await getOrCreateCurrentUser(db);
+  const user = await requireCurrentUser(db);
   const [preferences, errorPatterns] = await Promise.all([
     db.writingPreference.findMany({
       where: { userId: user.id, deletedAt: null },
@@ -18,7 +18,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-paper">
-      <AppNav />
+      <AppNav user={user} />
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <div className="mb-6">
           <p className="text-sm font-semibold text-sky-700">我的写作画像</p>

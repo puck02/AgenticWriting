@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { uploadPurposeSchema } from "@/domain/uploads";
 import { db } from "@/lib/db";
-import { getOrCreateCurrentUser } from "@/lib/session";
+import { getCurrentUser } from "@/lib/session";
 import { createOcrAdapterFromEnv } from "@/services/ocr/ocr-adapter-factory";
 import { createOcrDraft, type OcrAdapter, processOcrUpload } from "@/services/ocr/ocr-service";
 
@@ -21,10 +21,14 @@ export async function POST(request: NextRequest) {
   }
 
   let adapter: OcrAdapter | undefined;
+  const user = await getCurrentUser(db);
+
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   try {
     adapter = createOcrAdapterFromEnv();
-    const user = await getOrCreateCurrentUser(db);
     const result = await processOcrUpload({
       db,
       userId: user.id,

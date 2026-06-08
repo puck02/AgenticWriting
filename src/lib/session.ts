@@ -1,10 +1,14 @@
-import type { Prisma, PrismaClient, User } from "@prisma/client";
+import type { PrismaClient, User, UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-const userCookieName = "agentic_writing_user";
-const fallbackDemoEmail = "demo@agentic-writing.local";
+import { hashOpaqueToken } from "@/lib/token";
 
-type SessionDb = Pick<PrismaClient, "user">;
+export const sessionCookieName = "agentic_writing_session";
+export const sessionDurationMs = 1000 * 60 * 60 * 24 * 30;
+
+type SessionDb = Pick<PrismaClient, "authSession">;
+type SessionUser = User;
 
 export function canAccessUserResource({
   currentUserId,
@@ -16,64 +20,75 @@ export function canAccessUserResource({
   return currentUserId === resourceUserId;
 }
 
-export async function getOrCreateCurrentUser(db: SessionDb): Promise<User> {
+export async function getCurrentUser(db: SessionDb): Promise<SessionUser | null> {
   const cookieStore = await cookies();
-  const userId = cookieStore.get(userCookieName)?.value;
-  const existingUser = userId
-    ? await db.user.findUnique({ where: { id: userId } })
-    : null;
+  const sessionToken = cookieStore.get(sessionCookieName)?.value;
 
-  if (existingUser) {
-    return existingUser;
+  if (!sessionToken) {
+    return null;
   }
 
-  const user = await getOrCreateFallbackDemoUser(db);
+  const session = await db.authSession.findUnique({
+    where: { tokenHash: hashOpaqueToken(sessionToken) },
+    include: { user: true }
+  });
 
-  try {
-    cookieStore.set(userCookieName, user.id, {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/"
-    });
-  } catch {
-    // Server Components cannot mutate cookies in production; route handlers still can.
+  if (!session) {
+    safelyDeleteSessionCookie(cookieStore);
+    return null;
+  }
+
+  if (session.expiresAt <= new Date()) {
+    safelyDeleteSessionCookie(cookieStore);
+    return null;
+  }
+
+  return session.user;
+}
+
+export async function requireCurrentUser(db: SessionDb): Promise<SessionUser> {
+  const user = await getCurrentUser(db);
+
+  if (!user) {
+    redirect("/login");
   }
 
   return user;
 }
 
-async function getOrCreateFallbackDemoUser(db: SessionDb): Promise<User> {
-  const existingUser = await db.user.findUnique({
-    where: { email: fallbackDemoEmail }
+export function isAdminUser(user: Pick<SessionUser, "role"> | null): boolean {
+  return user?.role === "ADMIN";
+}
+
+export function createSessionExpiresAt(now = new Date()): Date {
+  return new Date(now.getTime() + sessionDurationMs);
+}
+
+export async function setSessionCookie(token: string, expiresAt: Date) {
+  const cookieStore = await cookies();
+
+  cookieStore.set(sessionCookieName, token, {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    expires: expiresAt
   });
+}
 
-  if (existingUser) {
-    return existingUser;
-  }
+export async function clearSessionCookie() {
+  const cookieStore = await cookies();
 
+  safelyDeleteSessionCookie(cookieStore);
+}
+
+function safelyDeleteSessionCookie(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   try {
-    return await db.user.create({
-      data: {
-        email: fallbackDemoEmail
-      } satisfies Prisma.UserCreateInput
-    });
-  } catch (error) {
-    if (!isUniqueConstraintError(error)) {
-      throw error;
-    }
-
-    const concurrentUser = await db.user.findUnique({
-      where: { email: fallbackDemoEmail }
-    });
-
-    if (!concurrentUser) {
-      throw error;
-    }
-
-    return concurrentUser;
+    cookieStore.delete(sessionCookieName);
+  } catch {
+    // Server Components cannot mutate cookies in production.
   }
 }
 
-function isUniqueConstraintError(error: unknown): boolean {
-  return (error as { code?: unknown }).code === "P2002";
+export function normalizeUserRole(role: UserRole): UserRole {
+  return role;
 }

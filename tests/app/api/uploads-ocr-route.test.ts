@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { NextRequest } from "next/server";
 
 const mocks = vi.hoisted(() => ({
-  getOrCreateCurrentUser: vi.fn()
+  getCurrentUser: vi.fn()
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -10,33 +10,29 @@ vi.mock("@/lib/db", () => ({
 }));
 
 vi.mock("@/lib/session", () => ({
-  getOrCreateCurrentUser: mocks.getOrCreateCurrentUser
+  getCurrentUser: mocks.getCurrentUser
 }));
 
 import { POST } from "@/app/api/uploads/ocr/route";
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  mocks.getOrCreateCurrentUser.mockReset();
+  mocks.getCurrentUser.mockReset();
 });
 
 describe("POST /api/uploads/ocr", () => {
-  it("returns an OCR draft in development when the database is unavailable", async () => {
-    mocks.getOrCreateCurrentUser.mockRejectedValueOnce(new Error("ECONNREFUSED"));
+  it("requires a logged-in user", async () => {
+    mocks.getCurrentUser.mockResolvedValueOnce(null);
 
     const response = await POST(createUploadRequest());
     const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(body).toMatchObject({
-      uploadId: null,
-      status: "READY",
-      rawText: expect.stringContaining("essay.png"),
-      normalizedText: expect.stringContaining("essay.png")
-    });
+    expect(response.status).toBe(401);
+    expect(body.error).toBe("Unauthorized");
   });
 
   it("returns a JSON error when real OCR configuration is missing", async () => {
+    mocks.getCurrentUser.mockResolvedValueOnce({ id: "user-1" });
     vi.stubEnv("NODE_ENV", "development");
 
     const response = await POST(createUploadRequest());

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 import { IslandGlyph } from "@/components/IslandUi";
 
@@ -11,8 +11,24 @@ const navItems = [
   { href: "/expressions", label: "个人表达库" }
 ];
 
-export function AppNav() {
+type AppNavUser = {
+  email: string;
+  role: "USER" | "ADMIN";
+};
+
+export function AppNav({ user }: { user?: AppNavUser | null }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const visibleNavItems =
+    user?.role === "ADMIN"
+      ? [...navItems, { href: "/admin/invites", label: "邀请码" }]
+      : navItems;
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
 
   return (
     <header className="border-b-2 border-[#725d42]/10 bg-[#fffdf4]/90 backdrop-blur">
@@ -24,27 +40,37 @@ export function AppNav() {
           <IslandGlyph label="写作教练">W</IslandGlyph>
           考研英语写作教练
         </Link>
-        <nav className="flex flex-wrap gap-2 text-sm">
-          {navItems.map((item) => {
-            const isCurrent = isCurrentNavItem(pathname, item.href);
+        <div className="flex flex-col gap-3 sm:items-end">
+          <nav className="flex flex-wrap gap-2 text-sm">
+            {visibleNavItems.map((item) => {
+              const isCurrent = isCurrentNavItem(pathname, item.href);
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={isCurrent ? "page" : undefined}
-                className={[
-                  "island-button island-button-small",
-                  isCurrent
-                    ? "island-button-primary nav-link-active"
-                    : "island-button-default"
-                ].join(" ")}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isCurrent ? "page" : undefined}
+                  className={[
+                    "island-button island-button-small",
+                    isCurrent
+                      ? "island-button-primary nav-link-active"
+                      : "island-button-default"
+                  ].join(" ")}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+          {user ? (
+            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#725d42]">
+              <span>{user.email}</span>
+              <button type="button" onClick={handleLogout} className="nav-logout-button">
+                退出
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </header>
   );

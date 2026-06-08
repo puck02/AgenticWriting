@@ -1,10 +1,14 @@
 import { AppNav } from "@/components/AppNav";
 import { EssaySubmitForm } from "@/components/EssaySubmitForm";
+import { db } from "@/lib/db";
+import { requireCurrentUser } from "@/lib/session";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const user = await requireCurrentUser(db);
+
   return (
     <main className="writing-shell min-h-screen">
-      <AppNav />
+      <AppNav user={user} />
       <section className="mx-auto grid max-w-6xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="writing-panel p-4 sm:p-6">
           <div className="mb-5 border-b-2 border-[#725d42]/10 pb-4">

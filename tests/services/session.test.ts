@@ -1,16 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { canAccessUserResource, getOrCreateCurrentUser } from "@/lib/session";
+import {
+  canAccessUserResource,
+  getCurrentUser,
+  isAdminUser,
+  requireCurrentUser
+} from "@/lib/session";
 
-type SessionDb = Parameters<typeof getOrCreateCurrentUser>[0];
+type SessionDb = Parameters<typeof getCurrentUser>[0];
 
 const cookieStore = {
   get: vi.fn(),
-  set: vi.fn()
+  set: vi.fn(),
+  delete: vi.fn()
 };
+
+const mocks = vi.hoisted(() => ({
+  redirect: vi.fn()
+}));
 
 vi.mock("next/headers", () => ({
   cookies: vi.fn(() => cookieStore)
+}));
+
+vi.mock("next/navigation", () => ({
+  redirect: mocks.redirect
 }));
 
 describe("canAccessUserResource", () => {
@@ -33,49 +47,99 @@ describe("canAccessUserResource", () => {
   });
 });
 
-describe("getOrCreateCurrentUser", () => {
+describe("getCurrentUser", () => {
   beforeEach(() => {
     cookieStore.get.mockReset();
-    cookieStore.set.mockReset();
+    cookieStore.delete.mockReset();
+    mocks.redirect.mockReset();
   });
 
-  it("returns the stable demo user when cookie writes are not allowed", async () => {
+  it("returns null when no session cookie exists", async () => {
     cookieStore.get.mockReturnValue(undefined);
-    cookieStore.set.mockImplementation(() => {
-      throw new Error("Cookies can only be modified in a Server Action");
-    });
-    const user = {
-      id: "user-demo",
-      email: "demo@agentic-writing.local",
-      createdAt: new Date()
-    };
     const db = {
-      user: {
-        findUnique: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue(user)
+      authSession: {
+        findUnique: vi.fn()
       }
     } as unknown as SessionDb;
 
-    await expect(getOrCreateCurrentUser(db)).resolves.toEqual(user);
-    expect(db.user.create).toHaveBeenCalledWith({
-      data: { email: "demo@agentic-writing.local" }
-    });
+    await expect(getCurrentUser(db)).resolves.toBeNull();
+    expect(db.authSession.findUnique).not.toHaveBeenCalled();
   });
 
-  it("returns the stable demo user when a concurrent request creates it first", async () => {
-    cookieStore.get.mockReturnValue(undefined);
+  it("returns the session user when the session is valid", async () => {
+    cookieStore.get.mockReturnValue({ value: "session-token" });
     const user = {
-      id: "user-demo",
-      email: "demo@agentic-writing.local",
+      id: "user-1",
+      email: "writer@example.com",
+      passwordHash: "hash",
+      role: "USER",
       createdAt: new Date()
     };
     const db = {
-      user: {
-        findUnique: vi.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(user),
-        create: vi.fn().mockRejectedValue({ code: "P2002" })
+      authSession: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "session-1",
+          tokenHash: "token-hash",
+          userId: user.id,
+          expiresAt: new Date(Date.now() + 60_000),
+          createdAt: new Date(),
+          user
+        })
       }
     } as unknown as SessionDb;
 
-    await expect(getOrCreateCurrentUser(db)).resolves.toEqual(user);
+    await expect(getCurrentUser(db)).resolves.toEqual(user);
+  });
+
+  it("clears and ignores an expired session", async () => {
+    cookieStore.get.mockReturnValue({ value: "session-token" });
+    const db = {
+      authSession: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: "session-1",
+          tokenHash: "token-hash",
+          userId: "user-1",
+          expiresAt: new Date(Date.now() - 60_000),
+          createdAt: new Date(),
+          user: {
+            id: "user-1",
+            email: "writer@example.com",
+            passwordHash: "hash",
+            role: "USER",
+            createdAt: new Date()
+          }
+        })
+      }
+    } as unknown as SessionDb;
+
+    await expect(getCurrentUser(db)).resolves.toBeNull();
+    expect(cookieStore.delete).toHaveBeenCalledWith("agentic_writing_session");
+  });
+});
+
+describe("requireCurrentUser", () => {
+  beforeEach(() => {
+    cookieStore.get.mockReset();
+    mocks.redirect.mockReset();
+  });
+
+  it("redirects anonymous users to login", async () => {
+    cookieStore.get.mockReturnValue(undefined);
+    const db = {
+      authSession: {
+        findUnique: vi.fn()
+      }
+    } as unknown as SessionDb;
+
+    await requireCurrentUser(db);
+
+    expect(mocks.redirect).toHaveBeenCalledWith("/login");
+  });
+});
+
+describe("isAdminUser", () => {
+  it("recognizes admin users", () => {
+    expect(isAdminUser({ role: "ADMIN" })).toBe(true);
+    expect(isAdminUser({ role: "USER" })).toBe(false);
   });
 });

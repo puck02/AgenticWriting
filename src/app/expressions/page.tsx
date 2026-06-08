@@ -1,10 +1,10 @@
 import { AppNav } from "@/components/AppNav";
 import { essayTypes } from "@/domain/labels";
 import { db } from "@/lib/db";
-import { getOrCreateCurrentUser } from "@/lib/session";
+import { requireCurrentUser } from "@/lib/session";
 
 export default async function ExpressionsPage() {
-  const user = await getOrCreateCurrentUser(db);
+  const user = await requireCurrentUser(db);
   const expressions = await db.expressionAsset.findMany({
     where: { userId: user.id, deletedAt: null },
     orderBy: [{ essayType: "asc" }, { createdAt: "desc" }]
@@ -12,7 +12,7 @@ export default async function ExpressionsPage() {
 
   return (
     <main className="min-h-screen bg-paper">
-      <AppNav />
+      <AppNav user={user} />
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         <div className="mb-6">
           <p className="text-sm font-semibold text-sky-700">个人表达库</p>
