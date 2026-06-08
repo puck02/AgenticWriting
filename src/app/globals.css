@@ -323,6 +323,12 @@ input {
   transform: translateY(-1px);
 }
 
+.review-filter-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+  transform: none;
+}
+
 .review-filter-button:active {
   transform: translateY(1px);
 }
@@ -336,6 +342,105 @@ input {
   border-color: rgba(25, 200, 185, 0.72);
   background: rgba(130, 213, 187, 0.24);
   color: #14866d;
+}
+
+.review-action-button {
+  border-color: rgba(25, 200, 185, 0.38);
+  background: rgba(255, 253, 244, 0.92);
+}
+
+.review-mini-map {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(2rem, 1fr));
+  gap: 0.45rem;
+}
+
+.review-mini-map-dot {
+  min-height: 2rem;
+  border: 2px solid rgba(114, 93, 66, 0.14);
+  border-radius: 0.7rem;
+  background: rgba(255, 253, 244, 0.78);
+  color: #725d42;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 900;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.review-mini-map-dot:hover {
+  transform: translateY(-1px);
+}
+
+.review-mini-map-dot:active {
+  transform: translateY(1px);
+}
+
+.review-mini-map-dot:focus-visible {
+  outline: 3px solid rgba(25, 200, 185, 0.3);
+  outline-offset: 2px;
+}
+
+.review-mini-map-dot-pending {
+  background: rgba(247, 205, 103, 0.2);
+}
+
+.review-mini-map-dot-accepted {
+  background: rgba(130, 213, 187, 0.28);
+  color: #14866d;
+}
+
+.review-mini-map-dot-rejected {
+  background: rgba(114, 93, 66, 0.08);
+}
+
+.review-mini-map-dot-active {
+  border-color: rgba(25, 200, 185, 0.76);
+  box-shadow: 0 0 0 3px rgba(25, 200, 185, 0.16);
+}
+
+.review-copy-button {
+  min-height: 1.8rem;
+  border: 1px solid rgba(20, 134, 109, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 253, 244, 0.8);
+  color: #14866d;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 0 0.7rem;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.review-copy-button:hover {
+  border-color: rgba(20, 134, 109, 0.4);
+  background: rgba(255, 253, 244, 0.96);
+  transform: translateY(-1px);
+}
+
+.review-copy-button:active {
+  transform: translateY(1px);
+}
+
+.review-copy-button:focus-visible {
+  outline: 3px solid rgba(25, 200, 185, 0.28);
+  outline-offset: 2px;
+}
+
+.suggestion-added-token {
+  border-radius: 0.35rem;
+  background: rgba(247, 205, 103, 0.28);
+  box-shadow: inset 0 -0.18em rgba(247, 205, 103, 0.5);
+  padding: 0.02rem 0.12rem;
 }
 
 .review-feedback-badge {

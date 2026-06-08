@@ -33,6 +33,16 @@ const rejectedSuggestion = {
   rejectLabel: "NOT_MY_STYLE" as const
 };
 
+const secondPendingSuggestion = {
+  id: "suggestion-4",
+  originalSentence: "Hard work makes success.",
+  suggestedSentence: "Consistent effort lays the foundation for success.",
+  reason: "表达更符合议论文语气。",
+  profileExplanation: null,
+  accepted: null,
+  rejectLabel: null
+};
+
 describe("InteractiveEssayReview", () => {
   it("highlights original sentences that have suggestions", () => {
     render(
@@ -185,6 +195,54 @@ describe("InteractiveEssayReview", () => {
     );
     expect(screen.getByTestId("review-progress-summary").textContent).toContain(
       "不采纳 1"
+    );
+  });
+
+  it("jumps through pending suggestions from the review toolbar", () => {
+    render(
+      <InteractiveEssayReview
+        essayId="essay-1"
+        content={
+          "Practice is important.\nStudents should keep trying.\nTeachers can give help.\nHard work makes success."
+        }
+        suggestions={[
+          baseSuggestion,
+          acceptedSuggestion,
+          rejectedSuggestion,
+          secondPendingSuggestion
+        ]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "下一条待处理" }));
+    expect(screen.getByTestId("review-suggestion-card-suggestion-1").className).toContain(
+      "review-suggestion-active"
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "下一条待处理" }));
+    expect(screen.getByTestId("review-suggestion-card-suggestion-4").className).toContain(
+      "review-suggestion-active"
+    );
+  });
+
+  it("activates suggestions from the compact suggestion navigator", () => {
+    render(
+      <InteractiveEssayReview
+        essayId="essay-1"
+        content={
+          "Practice is important.\nStudents should keep trying.\nTeachers can give help."
+        }
+        suggestions={[baseSuggestion, acceptedSuggestion, rejectedSuggestion]}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "定位建议 2，已采纳" }));
+
+    expect(screen.getByTestId("review-suggestion-card-suggestion-2").className).toContain(
+      "review-suggestion-active"
+    );
+    expect(screen.getByTestId("review-sentence-suggestion-2").className).toContain(
+      "review-sentence-active"
     );
   });
 });

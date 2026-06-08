@@ -54,4 +54,50 @@ describe("SuggestionCard", () => {
       "已记录不采纳原因。"
     );
   });
+
+  it("copies the suggested expression with inline feedback", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true
+    });
+
+    render(
+      <SuggestionCard
+        essayId="essay-1"
+        suggestionId="suggestion-1"
+        originalSentence="Practice is important."
+        suggestedSentence="Practice plays an important role in steady progress."
+        reason="表达更正式。"
+        accepted={null}
+        rejectLabel={null}
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "复制建议表达" }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        "Practice plays an important role in steady progress."
+      );
+    });
+    expect(screen.getByRole("status").textContent).toContain("已复制建议表达。");
+  });
+
+  it("highlights words that are newly introduced in the suggested sentence", () => {
+    render(
+      <SuggestionCard
+        essayId="essay-1"
+        suggestionId="suggestion-1"
+        originalSentence="Practice is important."
+        suggestedSentence="Practice plays an important role in steady progress."
+        reason="表达更正式。"
+        accepted={null}
+        rejectLabel={null}
+      />
+    );
+
+    expect(screen.getByTestId("suggestion-added-token-suggestion-1-plays")).toBeTruthy();
+    expect(screen.getByTestId("suggestion-added-token-suggestion-1-progress")).toBeTruthy();
+  });
 });

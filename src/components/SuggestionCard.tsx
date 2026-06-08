@@ -41,6 +41,7 @@ export function SuggestionCard({
     rejectLabel ?? rejectLabels[0].value
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const hasSavedFeedback = status === "accepted" || status === "rejected";
   const statusLabel =
@@ -49,11 +50,13 @@ export function SuggestionCard({
     ? "正在保存反馈..."
     : error
       ? error
-      : status === "accepted"
-        ? "已采纳，表达会进入个人表达库。"
-        : status === "rejected"
-          ? "已记录不采纳原因。"
-          : "选择后会更新你的写作画像。";
+      : copyMessage
+        ? copyMessage
+        : status === "accepted"
+          ? "已采纳，表达会进入个人表达库。"
+          : status === "rejected"
+            ? "已记录不采纳原因。"
+            : "选择后会更新你的写作画像。";
 
   async function submitFeedback({
     nextAccepted,
@@ -91,6 +94,17 @@ export function SuggestionCard({
       );
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function copySuggestedSentence() {
+    setError(null);
+
+    try {
+      await navigator.clipboard.writeText(suggestedSentence);
+      setCopyMessage("已复制建议表达。");
+    } catch {
+      setCopyMessage("复制失败，请手动复制。");
     }
   }
 
@@ -132,11 +146,24 @@ export function SuggestionCard({
             <p className="text-sm leading-6 text-[#3f3426]">{originalSentence}</p>
           </div>
           <div className="rounded-[18px] border-2 border-[#82d5bb]/35 bg-[#82d5bb]/15 p-3">
-            <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#14866d]">
-              建议表达
-            </p>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-black uppercase tracking-normal text-[#14866d]">
+                建议表达
+              </p>
+              <button
+                type="button"
+                className="review-copy-button"
+                onClick={copySuggestedSentence}
+              >
+                复制建议表达
+              </button>
+            </div>
             <p className="text-sm leading-6 text-[#3f3426]">
-              {suggestedSentence}
+              {renderSuggestedSentenceDiff({
+                suggestionId,
+                originalSentence,
+                suggestedSentence
+              })}
             </p>
           </div>
         </div>
@@ -205,4 +232,58 @@ export function SuggestionCard({
       </IslandCard>
     </div>
   );
+}
+
+function renderSuggestedSentenceDiff({
+  suggestionId,
+  originalSentence,
+  suggestedSentence
+}: {
+  suggestionId: string;
+  originalSentence: string;
+  suggestedSentence: string;
+}) {
+  const originalTokenSet = new Set(
+    tokenizeWords(originalSentence)
+      .map(normalizeToken)
+      .filter((token) => token.length > 0)
+  );
+  const emittedTestIds = new Set<string>();
+
+  return suggestedSentence.split(/(\s+)/).map((part, index) => {
+    if (/^\s+$/.test(part)) {
+      return part;
+    }
+
+    const normalizedToken = normalizeToken(part);
+    const isAdded =
+      normalizedToken.length > 0 && !originalTokenSet.has(normalizedToken);
+    const shouldMarkTestId = isAdded && !emittedTestIds.has(normalizedToken);
+
+    if (shouldMarkTestId) {
+      emittedTestIds.add(normalizedToken);
+    }
+
+    return (
+      <span
+        key={`${part}-${index}`}
+        className={isAdded ? "suggestion-added-token" : undefined}
+        data-testid={
+          shouldMarkTestId
+            ? `suggestion-added-token-${suggestionId}-${normalizedToken}`
+            : undefined
+        }
+      >
+        {part}
+      </span>
+    );
+  });
+}
+
+function tokenizeWords(sentence: string) {
+  return sentence.split(/\s+/);
+}
+
+function normalizeToken(token: string) {
+  return token.toLowerCase().replace(/[^a-z0-9'-]/g, "");
 }

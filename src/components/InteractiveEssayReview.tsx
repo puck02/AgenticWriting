@@ -86,6 +86,9 @@ export function InteractiveEssayReview({
 
     return getFeedbackStatus(feedbackStatuses, suggestion) === activeFilter;
   });
+  const pendingSuggestions = suggestions.filter(
+    (suggestion) => getFeedbackStatus(feedbackStatuses, suggestion) === "pending"
+  );
 
   function saveFeedbackStatus({
     suggestionId,
@@ -121,6 +124,25 @@ export function InteractiveEssayReview({
         targetCard.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }
+  }
+
+  function activateNextPendingSuggestion() {
+    if (pendingSuggestions.length === 0) {
+      return;
+    }
+
+    const activePendingIndex = pendingSuggestions.findIndex(
+      (suggestion) => suggestion.id === activeSuggestionId
+    );
+    const nextIndex =
+      activePendingIndex >= 0
+        ? (activePendingIndex + 1) % pendingSuggestions.length
+        : 0;
+
+    activateSuggestion({
+      suggestionId: pendingSuggestions[nextIndex].id,
+      shouldScroll: true
+    });
   }
 
   function handleWorkflowKeyDown(event: KeyboardEvent<HTMLElement>) {
@@ -264,6 +286,53 @@ export function InteractiveEssayReview({
                   <span>
                     {getFilterCount(filter.value, progressCounts, suggestions.length)}
                   </span>
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="review-filter-button review-action-button"
+              disabled={pendingSuggestions.length === 0}
+              onClick={activateNextPendingSuggestion}
+            >
+              下一条待处理
+            </button>
+          </div>
+
+          <div
+            className="review-mini-map mt-4"
+            aria-label="建议定位导航"
+          >
+            {suggestions.map((suggestion, index) => {
+              const feedbackStatus = getFeedbackStatus(
+                feedbackStatuses,
+                suggestion
+              );
+              const isActive = activeSuggestionId === suggestion.id;
+
+              return (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  aria-label={`定位建议 ${index + 1}，${getFeedbackStatusLabel(
+                    feedbackStatus
+                  )}`}
+                  aria-pressed={isActive}
+                  className={[
+                    "review-mini-map-dot",
+                    `review-mini-map-dot-${feedbackStatus}`,
+                    isActive ? "review-mini-map-dot-active" : ""
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  onClick={() =>
+                    activateSuggestion({
+                      suggestionId: suggestion.id,
+                      shouldScroll: true
+                    })
+                  }
+                >
+                  {index + 1}
                 </button>
               );
             })}
