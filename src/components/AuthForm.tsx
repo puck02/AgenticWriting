@@ -49,7 +49,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       <div className="space-y-2">
         <label
           htmlFor="email"
-          className="flex items-center gap-2 text-sm font-bold text-[#725d42]"
+          className="flex items-center gap-2 text-sm font-semibold text-[var(--aw-text-muted)]"
         >
           <IslandGlyph label="邮箱">M</IslandGlyph>
           邮箱
@@ -69,7 +69,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
       <div className="space-y-2">
         <label
           htmlFor="password"
-          className="flex items-center gap-2 text-sm font-bold text-[#725d42]"
+          className="flex items-center gap-2 text-sm font-semibold text-[var(--aw-text-muted)]"
         >
           <IslandGlyph label="密码">K</IslandGlyph>
           密码
@@ -91,7 +91,7 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         <div className="space-y-2">
           <label
             htmlFor="invitationCode"
-            className="flex items-center gap-2 text-sm font-bold text-[#725d42]"
+            className="flex items-center gap-2 text-sm font-semibold text-[var(--aw-text-muted)]"
           >
             <IslandGlyph label="邀请码">I</IslandGlyph>
             邀请码
@@ -125,11 +125,11 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
         {isRegister ? "注册并进入" : "登录"}
       </IslandButton>
 
-      <p className="text-center text-sm text-[#725d42]">
+      <p className="text-center text-sm text-[var(--aw-text-muted)]">
         {isRegister ? "已有账号？" : "还没有账号？"}
         <Link
           href={isRegister ? "/login" : "/register"}
-          className="ml-1 font-black text-[#14866d] hover:underline"
+          className="ml-1 font-semibold text-[var(--aw-accent)] hover:underline"
         >
           {isRegister ? "去登录" : "使用邀请码注册"}
         </Link>

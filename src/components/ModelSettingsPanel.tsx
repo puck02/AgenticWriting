@@ -56,14 +56,14 @@ export function ModelSettingsPanel({
     <form onSubmit={handleSubmit} className="space-y-5">
       <IslandCard className="space-y-4 p-4 sm:p-5">
         <div>
-          <h2 className="text-lg font-black text-[#3f3426]">模型连接</h2>
-          <p className="mt-1 text-sm leading-6 text-[#725d42]">
+          <h2 className="text-lg font-semibold text-[var(--aw-text)]">模型连接</h2>
+          <p className="mt-1 text-sm leading-6 text-[var(--aw-text-muted)]">
             保存后所有批改和引导请求会使用这里的 OpenAI-compatible 地址。
           </p>
         </div>
 
         <div className="grid gap-4">
-          <label className="grid gap-2 text-sm font-bold text-[#725d42]">
+          <label className="grid gap-2 text-sm font-semibold text-[var(--aw-text-muted)]">
             Base URL
             <input
               value={baseUrl}
@@ -74,7 +74,7 @@ export function ModelSettingsPanel({
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-bold text-[#725d42]">
+          <label className="grid gap-2 text-sm font-semibold text-[var(--aw-text-muted)]">
             API Key
             <input
               value={apiKey}
@@ -85,7 +85,7 @@ export function ModelSettingsPanel({
             />
           </label>
 
-          <label className="grid gap-2 text-sm font-bold text-[#725d42]">
+          <label className="grid gap-2 text-sm font-semibold text-[var(--aw-text-muted)]">
             默认模型
             <IslandSelect
               value={defaultModel}
@@ -102,8 +102,8 @@ export function ModelSettingsPanel({
           </label>
         </div>
 
-        <div className="flex flex-col gap-3 border-t-2 border-[#725d42]/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-bold text-[#725d42]">
+        <div className="flex flex-col gap-3 border-t border-[var(--aw-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-semibold text-[var(--aw-text-muted)]">
             当前密钥：{settings.maskedApiKey ?? "未设置"}
           </p>
           <IslandButton
@@ -120,7 +120,7 @@ export function ModelSettingsPanel({
           <p
             role="status"
             aria-live="polite"
-            className="text-sm font-bold text-[#725d42]"
+            className="text-sm font-semibold text-[var(--aw-text-muted)]"
           >
             {message}
           </p>

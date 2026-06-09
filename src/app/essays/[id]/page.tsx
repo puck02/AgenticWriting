@@ -41,36 +41,36 @@ export default async function EssayDetailPage({
   ).length;
 
   return (
-    <main className="min-h-screen bg-paper">
+    <main className="writing-shell min-h-screen">
       <AppNav user={user} />
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <section className="rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+        <section className="writing-panel p-4 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-sky-700">{essayTypeLabel}</p>
-              <h1 className="mt-2 text-2xl font-semibold tracking-normal text-slate-950 sm:text-3xl">
-                批改结果
+              <p className="coach-eyebrow">{essayTypeLabel}</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-normal text-[var(--aw-text)] sm:text-3xl">
+                批改复盘
               </h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--aw-text-muted)]">
                 {essay.reviewSummary ?? "本次批改暂无摘要。"}
               </p>
             </div>
             <div className="grid min-w-64 grid-cols-3 gap-2 text-center">
-              <div className="rounded-md bg-slate-950 px-3 py-3 text-white">
-                <p className="text-xs text-slate-300">总分</p>
+              <div className="rounded-[14px] bg-[var(--aw-text)] px-3 py-3 text-[#f9fbff]">
+                <p className="text-xs text-[#d6d6dc]">总分</p>
                 <p className="mt-1 text-2xl font-semibold">
                   {essay.overallScore ?? "--"}
                 </p>
               </div>
-              <div className="rounded-md border border-slate-200 px-3 py-3">
-                <p className="text-xs text-slate-500">已采纳</p>
-                <p className="mt-1 text-2xl font-semibold text-emerald-700">
+              <div className="rounded-[14px] border border-[var(--aw-border)] bg-[var(--aw-surface-raised)] px-3 py-3">
+                <p className="text-xs text-[var(--aw-text-muted)]">已采纳</p>
+                <p className="mt-1 text-2xl font-semibold text-[var(--aw-success)]">
                   {acceptedCount}
                 </p>
               </div>
-              <div className="rounded-md border border-slate-200 px-3 py-3">
-                <p className="text-xs text-slate-500">不采纳</p>
-                <p className="mt-1 text-2xl font-semibold text-slate-700">
+              <div className="rounded-[14px] border border-[var(--aw-border)] bg-[var(--aw-surface-raised)] px-3 py-3">
+                <p className="text-xs text-[var(--aw-text-muted)]">不采纳</p>
+                <p className="mt-1 text-2xl font-semibold text-[var(--aw-text-muted)]">
                   {rejectedCount}
                 </p>
               </div>

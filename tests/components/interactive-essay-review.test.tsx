@@ -259,8 +259,29 @@ describe("InteractiveEssayReview", () => {
 
     fireEvent.click(screen.getByTestId("review-sentence-suggestion-1"));
 
-    expect(screen.getByText("当前学习目标")).toBeTruthy();
+    expect(screen.getByText("主动 lesson")).toBeTruthy();
     expect(screen.getAllByText("表达更正式。").length).toBeGreaterThan(0);
-    expect(screen.getByText("先理解，再决定是否采纳。")).toBeTruthy();
+    expect(screen.getByText(/先理解，再决定是否采纳/)).toBeTruthy();
+  });
+
+  it("presents a guided learning path around the active lesson", () => {
+    render(
+      <InteractiveEssayReview
+        essayId="essay-1"
+        content={
+          "Practice is important.\nStudents should keep trying.\nTeachers can give help."
+        }
+        suggestions={[baseSuggestion, acceptedSuggestion, rejectedSuggestion]}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId("review-sentence-suggestion-1"));
+
+    expect(screen.getByText("学习路径")).toBeTruthy();
+    expect(screen.getByText("1 理解问题")).toBeTruthy();
+    expect(screen.getByText("2 对照改写")).toBeTruthy();
+    expect(screen.getByText("3 迁移练习")).toBeTruthy();
+    expect(screen.getByText("主动 lesson")).toBeTruthy();
+    expect(screen.getByText("Practice plays an important role in steady progress.")).toBeTruthy();
   });
 });

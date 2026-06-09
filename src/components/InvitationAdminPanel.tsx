@@ -62,8 +62,8 @@ export function InvitationAdminPanel({
       <section className="writing-panel p-4 sm:p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-black text-[#3f3426]">生成邀请码</h2>
-            <p className="mt-1 text-sm text-[#725d42]">
+            <h2 className="text-lg font-semibold text-[var(--aw-text)]">生成邀请码</h2>
+            <p className="mt-1 text-sm text-[var(--aw-text-muted)]">
               每个邀请码只能注册一个新用户。
             </p>
           </div>
@@ -81,10 +81,10 @@ export function InvitationAdminPanel({
         </div>
 
         {newCode ? (
-          <div className="mt-4 rounded-[18px] border-2 border-[#82d5bb]/50 bg-[#fffdf4] p-4">
-            <p className="text-xs font-black text-[#14866d]">新邀请码</p>
+          <div className="mt-4 rounded-[14px] border border-[var(--aw-border)] bg-[var(--aw-surface)] p-4">
+            <p className="coach-eyebrow">新邀请码</p>
             <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <code className="block flex-1 break-all rounded-md bg-[#f7f3df] px-3 py-2 text-sm font-black text-[#3f3426]">
+              <code className="block flex-1 break-all rounded-md bg-[var(--aw-surface-muted)] px-3 py-2 text-sm font-semibold text-[var(--aw-text)]">
                 {newCode}
               </code>
               <button type="button" onClick={copyCode} className="review-copy-button">
@@ -94,28 +94,32 @@ export function InvitationAdminPanel({
           </div>
         ) : null}
 
-        {message ? <p className="mt-3 text-sm font-bold text-[#725d42]">{message}</p> : null}
+        {message ? (
+          <p className="mt-3 text-sm font-semibold text-[var(--aw-text-muted)]">
+            {message}
+          </p>
+        ) : null}
       </section>
 
       <section className="writing-panel p-4 sm:p-5">
-        <h2 className="text-lg font-black text-[#3f3426]">最近邀请码</h2>
+        <h2 className="text-lg font-semibold text-[var(--aw-text)]">最近邀请码</h2>
         <div className="mt-4 space-y-3">
           {invitations.length > 0 ? (
             invitations.map((invitation) => (
               <article
                 key={invitation.id}
-                className="rounded-[18px] border-2 border-[#725d42]/10 bg-[#fffdf4]/75 p-3"
+                className="rounded-[14px] border border-[var(--aw-border)] bg-[var(--aw-surface)] p-3"
               >
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
-                    <p className="font-black text-[#3f3426]">
+                    <p className="font-semibold text-[var(--aw-text)]">
                       {invitation.codePreview}
                     </p>
-                    <p className="mt-1 text-xs text-[#725d42]">
+                    <p className="mt-1 text-xs text-[var(--aw-text-muted)]">
                       创建于 {formatDate(invitation.createdAt)}
                     </p>
                   </div>
-                  <span className="rounded-full bg-[#f7f3df] px-3 py-1 text-xs font-black text-[#725d42]">
+                  <span className="rounded-full bg-[var(--aw-surface-muted)] px-3 py-1 text-xs font-semibold text-[var(--aw-text-muted)]">
                     {invitation.usedAt
                       ? `已使用：${invitation.usedByEmail ?? "未知用户"}`
                       : "未使用"}
@@ -124,7 +128,7 @@ export function InvitationAdminPanel({
               </article>
             ))
           ) : (
-            <p className="rounded-[18px] bg-[#fffdf4]/75 p-4 text-sm text-[#725d42]">
+            <p className="rounded-[14px] bg-[var(--aw-surface)] p-4 text-sm text-[var(--aw-text-muted)]">
               暂无邀请码。
             </p>
           )}

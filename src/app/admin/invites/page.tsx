@@ -29,11 +29,11 @@ export default async function AdminInvitesPage() {
       <AppNav user={user} />
       <section className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <div className="mb-6">
-          <p className="text-sm font-bold text-[#14866d]">管理员</p>
-          <h1 className="mt-2 text-2xl font-black tracking-normal text-[#3f3426] sm:text-3xl">
+          <p className="coach-eyebrow">管理员</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-normal text-[var(--aw-text)] sm:text-3xl">
             邀请码管理
           </h1>
-          <p className="mt-2 text-sm leading-6 text-[#725d42]">
+          <p className="mt-2 text-sm leading-6 text-[var(--aw-text-muted)]">
             生成一次性邀请码，用于控制新用户注册入口。
           </p>
         </div>

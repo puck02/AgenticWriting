@@ -106,6 +106,42 @@ describe("model-settings-service", () => {
     });
   });
 
+  it("uses the environment api key when saving first settings without a new key", async () => {
+    const db = {
+      aiModelSetting: {
+        findUnique: vi.fn().mockResolvedValue(null),
+        upsert: vi.fn().mockResolvedValue({})
+      }
+    };
+
+    await saveModelSettings(
+      db,
+      {
+        baseUrl: "https://new.example/v1",
+        apiKey: "",
+        defaultModel: "gpt-5.4-mini"
+      },
+      {
+        MODEL_API_KEY: "env-key"
+      }
+    );
+
+    expect(db.aiModelSetting.upsert).toHaveBeenCalledWith({
+      where: { id: "default" },
+      create: {
+        id: "default",
+        baseUrl: "https://new.example/v1",
+        apiKey: "env-key",
+        defaultModel: "gpt-5.4-mini"
+      },
+      update: {
+        baseUrl: "https://new.example/v1",
+        apiKey: "env-key",
+        defaultModel: "gpt-5.4-mini"
+      }
+    });
+  });
+
   it("masks api keys without exposing the full value", () => {
     expect(maskApiKey("sk-abcdefghijklmnopqrstuvwxyz")).toBe("sk-a...wxyz");
     expect(maskApiKey("short")).toBe("已设置");

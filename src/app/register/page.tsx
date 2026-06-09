@@ -19,11 +19,11 @@ export default async function RegisterPage() {
           <div className="mb-3 inline-flex">
             <IslandGlyph label="邀请码">I</IslandGlyph>
           </div>
-          <p className="text-sm font-bold text-[#14866d]">受邀注册</p>
-          <h1 className="mt-2 text-2xl font-black tracking-normal text-[#3f3426]">
+          <p className="coach-eyebrow">受邀注册</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-normal text-[var(--aw-text)]">
             创建写作账号
           </h1>
-          <p className="mt-2 text-sm leading-6 text-[#725d42]">
+          <p className="mt-2 text-sm leading-6 text-[var(--aw-text-muted)]">
             新账号必须使用管理员生成的一次性邀请码。
           </p>
         </div>

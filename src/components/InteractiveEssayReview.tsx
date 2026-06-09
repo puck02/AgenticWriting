@@ -94,6 +94,9 @@ export function InteractiveEssayReview({
     pendingSuggestions[0] ??
     suggestions[0] ??
     null;
+  const activeSuggestionStatus = activeSuggestion
+    ? getFeedbackStatus(feedbackStatuses, activeSuggestion)
+    : "pending";
 
   function saveFeedbackStatus({
     suggestionId,
@@ -185,16 +188,16 @@ export function InteractiveEssayReview({
       tabIndex={0}
       aria-label="逐句建议工作流"
       onKeyDown={handleWorkflowKeyDown}
-      className="mt-6 grid gap-6 lg:grid-cols-[320px_minmax(0,1fr)]"
+      className="review-coach-workflow mt-6"
     >
-      <aside className="writing-panel p-4 lg:sticky lg:top-4 lg:self-start">
+      <aside className="review-source-pane lg:sticky lg:top-4 lg:self-start">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-black text-[#3f3426]">原文</h2>
-          <span className="rounded-md bg-[#82d5bb]/20 px-2.5 py-1 text-xs font-bold text-[#14866d]">
+          <h2 className="review-pane-title">原文</h2>
+          <span className="review-soft-badge">
             可点击定位
           </span>
         </div>
-        <p className="review-essay-body mt-3 whitespace-pre-wrap text-sm leading-7 text-[#725d42]">
+        <p className="review-essay-body mt-3 whitespace-pre-wrap text-sm leading-7">
           {segments.map((segment) => {
             if (segment.type === "text") {
               return <span key={segment.key}>{segment.text}</span>;
@@ -241,32 +244,39 @@ export function InteractiveEssayReview({
         </p>
       </aside>
 
-      <div>
-        <div className="writing-panel mb-4 p-4">
+      <div className="review-learning-pane">
+        <div className="review-toolbar">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h2 className="text-lg font-black text-[#3f3426]">逐句建议</h2>
+              <p className="coach-eyebrow">学习路径</p>
+              <h2 className="review-pane-title">逐句建议</h2>
               <p
                 data-testid="review-progress-summary"
-                className="mt-1 text-sm leading-6 text-[#725d42]"
+                className="mt-1 text-sm leading-6 text-[var(--aw-text-muted)]"
               >
                 待处理 {progressCounts.pending} / 已采纳 {progressCounts.accepted} /
                 不采纳 {progressCounts.rejected}
               </p>
             </div>
-            <span className="rounded-md bg-[#f7cd67]/35 px-2.5 py-1 text-sm font-bold text-[#725d42]">
+            <span className="review-progress-badge">
               {completedCount}/{suggestions.length} 已反馈
             </span>
           </div>
 
           <div
-            className="mt-3 h-2 overflow-hidden rounded-full bg-[#725d42]/10"
+            className="review-progress-track mt-3"
             aria-hidden="true"
           >
             <div
-              className="h-full rounded-full bg-[#19c8b9] transition-[width] duration-200 ease-out"
+              className="review-progress-fill"
               style={{ width: `${progressPercent}%` }}
             />
+          </div>
+
+          <div className="learning-path-steps" aria-label="学习路径">
+            <span>1 理解问题</span>
+            <span>2 对照改写</span>
+            <span>3 迁移练习</span>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -305,15 +315,22 @@ export function InteractiveEssayReview({
           </div>
 
           {activeSuggestion ? (
-            <div className="coach-summary mt-4">
+            <div className="active-lesson-panel mt-4">
               <div>
-                <p className="text-xs font-black text-[#14866d]">当前学习目标</p>
-                <p className="mt-1 text-sm font-black leading-6 text-[#3f3426]">
+                <p className="coach-eyebrow">主动 lesson</p>
+                <p className="mt-1 text-sm font-semibold leading-6 text-[var(--aw-text)]">
                   {activeSuggestion.reason}
                 </p>
               </div>
-              <p className="text-sm leading-6 text-[#725d42]">
-                先理解，再决定是否采纳。
+              <div className="active-lesson-rewrite">
+                <p className="text-xs font-semibold text-[var(--aw-text-muted)]">
+                  建议表达
+                </p>
+                <p>{activeSuggestion.suggestedSentence}</p>
+              </div>
+              <p className="text-sm leading-6 text-[var(--aw-text-muted)]">
+                先理解，再决定是否采纳。当前状态：
+                {getFeedbackStatusLabel(activeSuggestionStatus)}
               </p>
             </div>
           ) : null}
@@ -393,7 +410,7 @@ export function InteractiveEssayReview({
               );
             })
           ) : (
-            <p className="writing-panel p-4 text-sm text-[#725d42]">
+            <p className="writing-panel p-4 text-sm text-[var(--aw-text-muted)]">
               当前筛选下暂无逐句建议。
             </p>
           )}

@@ -81,12 +81,14 @@ export async function saveModelSettings(
     baseUrl: string;
     apiKey: string;
     defaultModel: string;
-  }
+  },
+  env: ModelSettingsEnv = process.env
 ) {
   const current = await db.aiModelSetting.findUnique({
     where: { id: defaultSettingsId }
   });
-  const nextApiKey = nonEmpty(input.apiKey) ?? current?.apiKey ?? "";
+  const nextApiKey =
+    nonEmpty(input.apiKey) ?? current?.apiKey ?? nonEmpty(env.MODEL_API_KEY) ?? "";
   const data = {
     id: defaultSettingsId,
     baseUrl: normalizeBaseUrl(input.baseUrl),

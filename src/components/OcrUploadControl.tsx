@@ -68,7 +68,7 @@ export function OcrUploadControl({
           className={
             status === "failed"
               ? "text-sm text-red-700"
-              : "text-sm text-[#725d42]"
+              : "text-sm text-[var(--aw-text-muted)]"
           }
         >
           {message}

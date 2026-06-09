@@ -35,11 +35,11 @@ export function AppNav({ user }: { user?: AppNavUser | null }) {
   }
 
   return (
-    <header className="border-b-2 border-[#725d42]/10 bg-[#fffdf4]/90 backdrop-blur">
+    <header className="border-b border-[var(--aw-border)] bg-[rgba(251,251,253,0.86)] backdrop-blur">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-lg font-black tracking-normal text-[#3f3426]"
+          className="inline-flex items-center gap-2 text-lg font-semibold tracking-normal text-[var(--aw-text)]"
         >
           <IslandGlyph label="写作教练">W</IslandGlyph>
           考研英语写作教练
@@ -67,7 +67,7 @@ export function AppNav({ user }: { user?: AppNavUser | null }) {
             })}
           </nav>
           {user ? (
-            <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#725d42]">
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[var(--aw-text-muted)]">
               <span>{user.email}</span>
               <button type="button" onClick={handleLogout} className="nav-logout-button">
                 退出

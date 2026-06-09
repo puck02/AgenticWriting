@@ -120,4 +120,27 @@ describe("SuggestionCard", () => {
     expect(screen.getByText(/把你下一句里的核心名词换进去/)).toBeTruthy();
     expect(screen.getAllByText(/你更接受稳妥正式表达/).length).toBeGreaterThan(0);
   });
+
+  it("lets users complete a transfer practice before deciding feedback", () => {
+    render(
+      <SuggestionCard
+        essayId="essay-1"
+        suggestionId="suggestion-1"
+        originalSentence="Practice is important."
+        suggestedSentence="Consistent practice plays an important role in progress."
+        reason="用更具体的搭配表达观点。"
+        accepted={null}
+        rejectLabel={null}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText("迁移练习输入"), {
+      target: {
+        value: "Reading plays an important role in long-term development."
+      }
+    });
+
+    expect(screen.getByText("练习已记录，接着决定是否采纳这条表达。")).toBeTruthy();
+    expect(screen.getByText("理解 -> 改写 -> 迁移")).toBeTruthy();
+  });
 });

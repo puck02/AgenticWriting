@@ -19,11 +19,11 @@ export default async function LoginPage() {
           <div className="mb-3 inline-flex">
             <IslandGlyph label="写作教练">W</IslandGlyph>
           </div>
-          <p className="text-sm font-bold text-[#14866d]">登录</p>
-          <h1 className="mt-2 text-2xl font-black tracking-normal text-[#3f3426]">
+          <p className="coach-eyebrow">登录</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-normal text-[var(--aw-text)]">
             进入写作教练
           </h1>
-          <p className="mt-2 text-sm leading-6 text-[#725d42]">
+          <p className="mt-2 text-sm leading-6 text-[var(--aw-text-muted)]">
             登录后即可提交作文、查看写作画像和个人表达库。
           </p>
         </div>

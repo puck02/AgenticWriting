@@ -40,6 +40,7 @@ export function SuggestionCard({
   const [selectedRejectLabel, setSelectedRejectLabel] = useState<RejectLabelValue>(
     rejectLabel ?? rejectLabels[0].value
   );
+  const [transferPractice, setTransferPractice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +62,7 @@ export function SuggestionCard({
     originalSentence,
     suggestedSentence
   });
+  const hasTransferPractice = transferPractice.trim().length > 0;
 
   async function submitFeedback({
     nextAccepted,
@@ -127,7 +129,7 @@ export function SuggestionCard({
       onFocus={() => onActivate?.(suggestionId)}
       onMouseEnter={() => onActivate?.(suggestionId)}
     >
-      <IslandCard className="p-4 sm:p-5">
+      <IslandCard className="lesson-card p-4 sm:p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
           <span
             className={[
@@ -137,21 +139,23 @@ export function SuggestionCard({
           >
             {statusLabel}
           </span>
-          <span className="text-xs font-bold text-[#725d42]/80">
-            点击原文高亮可定位本条建议
+          <span className="lesson-flow-label">
+            理解 -&gt; 改写 -&gt; 迁移
           </span>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-2">
-          <div className="rounded-[18px] bg-[#fffdf4] p-3">
-            <p className="mb-2 text-xs font-black uppercase tracking-normal text-[#9a835a]">
+          <div className="lesson-compare-box">
+            <p className="lesson-label">
               原句
             </p>
-            <p className="text-sm leading-6 text-[#3f3426]">{originalSentence}</p>
+            <p className="text-sm leading-6 text-[var(--aw-text)]">
+              {originalSentence}
+            </p>
           </div>
-          <div className="rounded-[18px] border-2 border-[#82d5bb]/35 bg-[#82d5bb]/15 p-3">
+          <div className="lesson-compare-box lesson-compare-box-strong">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-black uppercase tracking-normal text-[#14866d]">
+              <p className="lesson-label">
                 建议表达
               </p>
               <button
@@ -162,7 +166,7 @@ export function SuggestionCard({
                 复制建议表达
               </button>
             </div>
-            <p className="text-sm leading-6 text-[#3f3426]">
+            <p className="text-sm leading-6 text-[var(--aw-text)]">
               {renderSuggestedSentenceDiff({
                 suggestionId,
                 originalSentence,
@@ -172,43 +176,59 @@ export function SuggestionCard({
           </div>
         </div>
 
-        <div className="mt-4 space-y-2 text-sm leading-6 text-[#725d42]">
+        <div className="lesson-reason-block mt-4">
           <p>
-            <span className="font-black text-[#3f3426]">修改理由：</span>
+            <span>为什么这样改：</span>
             {reason}
           </p>
           {profileExplanation ? (
             <p>
-              <span className="font-black text-[#3f3426]">画像说明：</span>
+              <span>结合你的画像：</span>
               {profileExplanation}
             </p>
           ) : null}
         </div>
 
-        <div className="mt-4 grid gap-3 border-t-2 border-[#725d42]/10 pt-4 md:grid-cols-2">
+        <div className="mt-4 grid gap-3 border-t border-[var(--aw-border)] pt-4 md:grid-cols-2">
           <section className="coach-panel">
-            <p className="text-xs font-black text-[#14866d]">表达拆解</p>
-            <p className="mt-2 text-sm leading-6 text-[#3f3426]">
+            <p className="coach-eyebrow">表达拆解</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--aw-text)]">
               {coachingPattern}
             </p>
             {profileExplanation ? (
-              <p className="mt-2 text-xs leading-5 text-[#725d42]">
+              <p className="mt-2 text-xs leading-5 text-[var(--aw-text-muted)]">
                 {profileExplanation}
               </p>
             ) : null}
           </section>
           <section className="coach-panel">
-            <p className="text-xs font-black text-[#14866d]">迁移练习</p>
-            <p className="mt-2 text-sm leading-6 text-[#3f3426]">
+            <p className="coach-eyebrow">迁移练习</p>
+            <p className="mt-2 text-sm leading-6 text-[var(--aw-text)]">
               把你下一句里的核心名词换进去，再用同一个结构写一句。
             </p>
-            <p className="mt-2 text-xs leading-5 text-[#725d42]">
+            <label className="mt-3 grid gap-2 text-xs font-semibold text-[var(--aw-text-muted)]">
+              迁移练习输入
+              <textarea
+                aria-label="迁移练习输入"
+                value={transferPractice}
+                onChange={(event) => setTransferPractice(event.target.value)}
+                className="transfer-practice-input"
+                rows={3}
+                placeholder="例如：Reading plays an important role in long-term growth."
+              />
+            </label>
+            <p className="mt-2 text-xs leading-5 text-[var(--aw-text-muted)]">
               先保留句意，再只替换一个表达点。
             </p>
+            {hasTransferPractice ? (
+              <p className="transfer-practice-status" role="status">
+                练习已记录，接着决定是否采纳这条表达。
+              </p>
+            ) : null}
           </section>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 border-t-2 border-[#725d42]/10 pt-4 md:flex-row md:items-center md:justify-between">
+        <div className="mt-4 flex flex-col gap-3 border-t border-[var(--aw-border)] pt-4 md:flex-row md:items-center md:justify-between">
           <div className="grid gap-2 sm:grid-cols-[auto_13rem_auto] sm:items-center">
             <IslandButton
               type="button"
@@ -251,7 +271,9 @@ export function SuggestionCard({
           <p
             role={error ? "alert" : "status"}
             aria-live="polite"
-            className={error ? "text-sm text-red-700" : "text-sm text-[#725d42]"}
+            className={
+              error ? "text-sm text-red-700" : "text-sm text-[var(--aw-text-muted)]"
+            }
           >
             {statusMessage}
           </p>

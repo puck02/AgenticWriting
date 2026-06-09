@@ -10,12 +10,7 @@ import {
   type SetStateAction
 } from "react";
 
-import {
-  IslandButton,
-  IslandCard,
-  IslandGlyph,
-  IslandSelect
-} from "@/components/IslandUi";
+import { IslandButton, IslandSelect } from "@/components/IslandUi";
 import {
   OcrUploadControl,
   type OcrRecognizedUpload
@@ -269,246 +264,305 @@ export function EssaySubmitForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div
-        className="inline-flex rounded-full border-2 border-[#725d42]/10 bg-[#fffdf4]/75 p-1"
-        role="group"
-        aria-label="写作模式"
-      >
-        <button
-          type="button"
-          className={[
-            "mode-toggle-button",
-            writingMode === "review" ? "mode-toggle-button-active" : ""
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          aria-pressed={writingMode === "review"}
-          onClick={() => setWritingMode("review")}
+    <form onSubmit={handleSubmit} className="coach-workspace-form">
+      <div className="coach-workspace-header">
+        <div
+          className="mode-segmented-control"
+          role="group"
+          aria-label="写作模式"
         >
-          批改模式
-        </button>
-        <button
-          type="button"
-          className={[
-            "mode-toggle-button",
-            writingMode === "guidance" ? "mode-toggle-button-active" : ""
-          ]
-            .filter(Boolean)
-            .join(" ")}
-          aria-pressed={writingMode === "guidance"}
-          onClick={() => setWritingMode("guidance")}
-        >
-          引导模式
-        </button>
+          <button
+            type="button"
+            className={[
+              "mode-toggle-button",
+              writingMode === "review" ? "mode-toggle-button-active" : ""
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-pressed={writingMode === "review"}
+            onClick={() => setWritingMode("review")}
+          >
+            批改模式
+          </button>
+          <button
+            type="button"
+            className={[
+              "mode-toggle-button",
+              writingMode === "guidance" ? "mode-toggle-button-active" : ""
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-pressed={writingMode === "guidance"}
+            onClick={() => setWritingMode("guidance")}
+          >
+            引导模式
+          </button>
+        </div>
+        <p className="coach-mode-description">
+          {writingMode === "guidance"
+            ? "边写边获得轻量提示，先保持自己的表达，再让 AI 接住停顿。"
+            : "先完整提交，再按句子进入理解、改写和迁移练习。"}
+        </p>
       </div>
 
-      <fieldset disabled={isPending} className="space-y-5">
-        <IslandCard color="yellow" className="space-y-3 p-4">
-          <label
-            htmlFor="essayType"
-            className="flex items-center gap-2 text-sm font-bold text-[#725d42]"
-          >
-            <IslandGlyph label="题型">T</IslandGlyph>
-            作文类型
-          </label>
-          <IslandSelect
-            id="essayType"
-            value={essayType}
-            onChange={(event) => setEssayType(event.target.value as EssayTypeValue)}
-          >
-            {essayTypes.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </IslandSelect>
-        </IslandCard>
+      <fieldset disabled={isPending} className="coach-workspace-grid">
+        <section className="coach-compose-pane" aria-label="作文编辑区">
+          <div className="coach-settings-row">
+            <label className="coach-field-label" htmlFor="essayType">
+              <span>作文类型</span>
+              <IslandSelect
+                id="essayType"
+                value={essayType}
+                onChange={(event) =>
+                  setEssayType(event.target.value as EssayTypeValue)
+                }
+              >
+                {essayTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </IslandSelect>
+            </label>
 
-        <IslandCard color="teal" className="space-y-3 p-4">
-          <label
-            htmlFor="reviewModel"
-            className="flex items-center gap-2 text-sm font-bold text-[#725d42]"
-          >
-            <IslandGlyph label="模型">M</IslandGlyph>
-            批改模型
-          </label>
-          <IslandSelect
-            id="reviewModel"
-            aria-label="批改模型"
-            value={reviewModel}
-            onChange={(event) =>
-              setReviewModel(event.target.value as ReviewModelValue)
-            }
-          >
-            {reviewModels.map((model) => (
-              <option key={model.value} value={model.value}>
-                {model.label}
-              </option>
-            ))}
-          </IslandSelect>
-        </IslandCard>
-
-        <div>
-          <label
-            htmlFor="prompt"
-            className="mb-2 flex items-center gap-2 text-sm font-bold text-[#725d42]"
-          >
-            <IslandGlyph label="题目">P</IslandGlyph>
-            作文题目
-          </label>
-          <div className="mb-3">
-            <OcrUploadControl
-              purpose="PROMPT"
-              label="上传题目图片识别"
-              onRecognized={applyRecognizedPrompt}
-            />
+            <label className="coach-field-label" htmlFor="reviewModel">
+              <span>批改模型</span>
+              <IslandSelect
+                id="reviewModel"
+                aria-label="批改模型"
+                value={reviewModel}
+                onChange={(event) =>
+                  setReviewModel(event.target.value as ReviewModelValue)
+                }
+              >
+                {reviewModels.map((model) => (
+                  <option key={model.value} value={model.value}>
+                    {model.label}
+                  </option>
+                ))}
+              </IslandSelect>
+            </label>
           </div>
-          <textarea
-            id="prompt"
-            aria-label="作文题目"
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            onPaste={(event) =>
-              handleImagePaste({
-                event,
-                purpose: "PROMPT",
-                targetName: "题目",
-                setText: setPrompt,
-                setPasteOcr: setPromptPasteOcr
-              })
-            }
-            required
-            rows={4}
-            className="writing-textarea min-h-28 px-4 py-3 text-sm leading-6 placeholder:text-[#9a835a]/60"
-            placeholder="粘贴题干、图表信息或应用文要求"
-          />
-          {promptPasteOcr.message ? (
-            <p
-              className={
-                promptPasteOcr.status === "failed"
-                  ? "mt-2 text-sm text-red-700"
-                  : "mt-2 text-sm text-[#725d42]"
-              }
-            >
-              {promptPasteOcr.message}
-            </p>
-          ) : null}
-        </div>
 
-        <div>
-          <label
-            htmlFor="content"
-            className="mb-2 flex items-center gap-2 text-sm font-bold text-[#725d42]"
-          >
-            <IslandGlyph label="正文">E</IslandGlyph>
-            作文正文
-          </label>
-          <div className="mb-3">
-            <OcrUploadControl
-              purpose="CONTENT"
-              label="上传正文图片识别"
-              onRecognized={applyRecognizedContent}
-            />
-          </div>
-          <textarea
-            id="content"
-            aria-label="作文正文"
-            value={content}
-            onChange={(event) => setContent(event.target.value)}
-            onPaste={(event) =>
-              handleImagePaste({
-                event,
-                purpose: "CONTENT",
-                targetName: "正文",
-                setText: setContent,
-                setPasteOcr: setContentPasteOcr
-              })
-            }
-            required
-            rows={14}
-            className="writing-textarea min-h-80 px-4 py-3 font-mono text-sm leading-7 placeholder:text-[#9a835a]/60"
-            placeholder="输入或粘贴你的英文作文"
-          />
-          {contentPasteOcr.message ? (
-            <p
-              className={
-                contentPasteOcr.status === "failed"
-                  ? "mt-2 text-sm text-red-700"
-                  : "mt-2 text-sm text-[#725d42]"
-              }
-            >
-              {contentPasteOcr.message}
-            </p>
-          ) : null}
-          {writingMode === "guidance" ? (
-            <div className="mt-3 rounded-[18px] border-2 border-[#82d5bb]/35 bg-[#82d5bb]/15 p-3">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-xs font-black text-[#14866d]">
-                    {isHintPending ? "正在生成 hint..." : "写作 hint"}
-                  </p>
-                  {hint ? (
-                    <>
-                      <p className="mt-2 text-sm font-black leading-6 text-[#3f3426]">
-                        {hint.completion}
-                      </p>
-                      <p className="mt-2 text-xs leading-5 text-[#725d42]">
-                        {hint.reason} · {hint.styleNote}
-                      </p>
-                    </>
-                  ) : (
-                    <p className="mt-2 text-sm leading-6 text-[#725d42]">
-                      停顿后会自动给出一句可采纳的英文补全。
-                    </p>
-                  )}
-                  {hintError ? (
-                    <p className="mt-2 text-xs font-bold text-red-700">{hintError}</p>
-                  ) : null}
-                </div>
-                <button
-                  type="button"
-                  className="review-copy-button whitespace-nowrap"
-                  disabled={!hint}
-                  onClick={applyHint}
-                >
-                  采纳 hint
-                </button>
-              </div>
+          <section className="coach-editor-section">
+            <div className="coach-section-title-row">
+              <label htmlFor="prompt" className="coach-section-title">
+                作文题目
+              </label>
+              <OcrUploadControl
+                purpose="PROMPT"
+                label="上传题目图片识别"
+                onRecognized={applyRecognizedPrompt}
+              />
             </div>
+            <textarea
+              id="prompt"
+              aria-label="作文题目"
+              value={prompt}
+              onChange={(event) => setPrompt(event.target.value)}
+              onPaste={(event) =>
+                handleImagePaste({
+                  event,
+                  purpose: "PROMPT",
+                  targetName: "题目",
+                  setText: setPrompt,
+                  setPasteOcr: setPromptPasteOcr
+                })
+              }
+              required
+              rows={4}
+              className="writing-textarea coach-prompt-textarea"
+              placeholder="粘贴题干、图表信息或应用文要求"
+            />
+            {promptPasteOcr.message ? (
+              <p
+                className={
+                  promptPasteOcr.status === "failed"
+                    ? "coach-inline-message coach-inline-message-error"
+                    : "coach-inline-message"
+                }
+              >
+                {promptPasteOcr.message}
+              </p>
+            ) : null}
+          </section>
+
+          <section className="coach-editor-section">
+            <div className="coach-section-title-row">
+              <div>
+                <label htmlFor="content" className="coach-section-title">
+                  作文正文
+                </label>
+                <p className="coach-section-subtitle">
+                  {contentWordCount} words, keep drafting in your own voice
+                </p>
+              </div>
+              <OcrUploadControl
+                purpose="CONTENT"
+                label="上传正文图片识别"
+                onRecognized={applyRecognizedContent}
+              />
+            </div>
+            <textarea
+              id="content"
+              aria-label="作文正文"
+              value={content}
+              onChange={(event) => setContent(event.target.value)}
+              onPaste={(event) =>
+                handleImagePaste({
+                  event,
+                  purpose: "CONTENT",
+                  targetName: "正文",
+                  setText: setContent,
+                  setPasteOcr: setContentPasteOcr
+                })
+              }
+              required
+              rows={14}
+              className="writing-textarea coach-content-textarea"
+              placeholder="输入或粘贴你的英文作文"
+            />
+            {contentPasteOcr.message ? (
+              <p
+                className={
+                  contentPasteOcr.status === "failed"
+                    ? "coach-inline-message coach-inline-message-error"
+                    : "coach-inline-message"
+                }
+              >
+                {contentPasteOcr.message}
+              </p>
+            ) : null}
+          </section>
+
+          {writingMode === "guidance" ? (
+            <section className="hint-panel" aria-label="写作 hint">
+              <div>
+                <p className="coach-eyebrow">
+                  {isHintPending ? "正在生成 hint..." : "写作 hint"}
+                </p>
+                {hint ? (
+                  <>
+                    <p className="hint-completion">{hint.completion}</p>
+                    <p className="hint-meta">
+                      {hint.reason} / {hint.styleNote} / {hint.referenceLabel}
+                    </p>
+                  </>
+                ) : (
+                  <p className="hint-empty">
+                    停顿时给一句轻提示，不打断你当前思路。
+                  </p>
+                )}
+                {hintError ? (
+                  <p className="coach-inline-message coach-inline-message-error">
+                    {hintError}
+                  </p>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                className="review-copy-button whitespace-nowrap"
+                disabled={!hint}
+                onClick={applyHint}
+              >
+                采纳 hint
+              </button>
+            </section>
           ) : null}
-        </div>
+
+          {error ? (
+            <p className="coach-form-error">
+              {error}
+            </p>
+          ) : null}
+
+          <div
+            data-testid="essay-form-readiness"
+            role="status"
+            aria-live="polite"
+            className="coach-readiness"
+          >
+            <p>{readinessMessage}</p>
+            <p className="tabular-nums">
+              题目 {prompt.trim().length} 字符 / 正文 {contentWordCount} 词
+            </p>
+          </div>
+
+          <IslandButton
+            type="submit"
+            disabled={!canSubmit}
+            loading={isPending}
+            loadingLabel="正在批改..."
+            variant="primary"
+            size="large"
+          >
+            {isPending ? "正在批改..." : "提交批改"}
+          </IslandButton>
+        </section>
+
+        <aside className="coach-rail" aria-label="私人写作 coach">
+          <div>
+            <p className="coach-eyebrow">私人写作 coach</p>
+            <h2 className="coach-rail-title">写作目标</h2>
+            <p className="coach-rail-copy">
+              {writingMode === "guidance"
+                ? "当前目标是帮助你继续写下去，而不是替你重写整篇。"
+                : "当前目标是保留真实表达，再把每条建议变成可迁移的句式。"}
+            </p>
+          </div>
+
+          <div className="coach-goal-list">
+            <CoachGoal complete={hasPrompt} label="题目任务已明确" />
+            <CoachGoal complete={hasContent} label="正文已有完整观点" />
+            <CoachGoal complete label="保留你的表达习惯" />
+          </div>
+
+          <div className="coach-rail-card">
+            <p className="coach-rail-card-label">引导方式</p>
+            <p className="coach-rail-card-copy">
+              {writingMode === "guidance"
+                ? "停顿时给一句轻提示，不打断你当前思路。"
+                : "批改后按句子进入 lesson，先理解原因，再决定采纳。"}
+            </p>
+          </div>
+
+          <div className="coach-rail-card">
+            <p className="coach-rail-card-label">图片材料</p>
+            <p className="coach-rail-card-copy">
+              已保留 {uploadAssetIds.length} 张上传图片
+            </p>
+            <p className="coach-rail-card-note">
+              提交批改时会和作文一并提交。
+            </p>
+          </div>
+
+          <div className="coach-rail-card">
+            <p className="coach-rail-card-label">下一步</p>
+            <p className="coach-rail-card-copy">{getCoachNextStep({
+              hasPrompt,
+              hasContent,
+              isOcrUploading,
+              writingMode
+            })}</p>
+          </div>
+        </aside>
       </fieldset>
-
-      {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </p>
-      ) : null}
-
-      <div
-        data-testid="essay-form-readiness"
-        role="status"
-        aria-live="polite"
-        className="grid gap-2 rounded-[18px] border-2 border-[#725d42]/10 bg-[#fffdf4]/75 p-3 text-sm text-[#725d42] sm:grid-cols-[1fr_auto]"
-      >
-        <p className="font-bold text-[#3f3426]">{readinessMessage}</p>
-        <p className="tabular-nums">
-          题目 {prompt.trim().length} 字符 / 正文 {contentWordCount} 词
-        </p>
-      </div>
-
-      <IslandButton
-        type="submit"
-        disabled={!canSubmit}
-        loading={isPending}
-        loadingLabel="正在批改..."
-        variant="primary"
-        size="large"
-      >
-        {isPending ? "正在批改..." : "提交批改"}
-      </IslandButton>
     </form>
+  );
+}
+
+function CoachGoal({
+  complete,
+  label
+}: {
+  complete: boolean;
+  label: string;
+}) {
+  return (
+    <div className={["coach-goal-item", complete ? "coach-goal-complete" : ""].join(" ")}>
+      <span aria-hidden="true">{complete ? "✓" : "•"}</span>
+      <p>{label}</p>
+    </div>
   );
 }
 
@@ -566,6 +620,36 @@ function getReadinessMessage({
   }
 
   return "可以提交，批改会同时更新你的写作画像。";
+}
+
+function getCoachNextStep({
+  hasPrompt,
+  hasContent,
+  isOcrUploading,
+  writingMode
+}: {
+  hasPrompt: boolean;
+  hasContent: boolean;
+  isOcrUploading: boolean;
+  writingMode: WritingMode;
+}) {
+  if (isOcrUploading) {
+    return "等图片识别完成，再核对题目和正文。";
+  }
+
+  if (!hasPrompt) {
+    return "先补全题目，coach 才能判断任务要求。";
+  }
+
+  if (!hasContent) {
+    return writingMode === "guidance"
+      ? "写下第一句，停顿后会出现 hint。"
+      : "保留原始正文，不要先手动润色。";
+  }
+
+  return writingMode === "guidance"
+    ? "继续写，卡住时只采纳适合你语气的 hint。"
+    : "提交后进入逐句 lesson。";
 }
 
 function countEnglishWords(text: string) {

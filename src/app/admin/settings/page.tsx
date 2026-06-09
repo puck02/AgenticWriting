@@ -20,11 +20,11 @@ export default async function AdminSettingsPage() {
       <AppNav user={user} />
       <section className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
         <div className="mb-6">
-          <p className="text-sm font-bold text-[#14866d]">管理员</p>
-          <h1 className="mt-2 text-2xl font-black tracking-normal text-[#3f3426] sm:text-3xl">
+          <p className="coach-eyebrow">管理员</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-normal text-[var(--aw-text)] sm:text-3xl">
             模型设置
           </h1>
-          <p className="mt-2 text-sm leading-6 text-[#725d42]">
+          <p className="mt-2 text-sm leading-6 text-[var(--aw-text-muted)]">
             配置批改和引导模式使用的模型服务地址、密钥和默认模型。
           </p>
         </div>
