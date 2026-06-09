@@ -9,6 +9,8 @@ type OcrUploadStatus = "idle" | "uploading" | "ready" | "failed";
 export type OcrRecognizedUpload = {
   uploadId: string | null;
   normalizedText: string;
+  status: "READY" | "FAILED";
+  error?: string;
 };
 
 export function OcrUploadControl({
@@ -36,8 +38,13 @@ export function OcrUploadControl({
     try {
       const recognized = await uploadImageForOcr({ purpose, file });
       onRecognized(recognized);
-      setStatus("ready");
-      setMessage("识别完成，请核对后再提交。");
+      if (recognized.status === "FAILED") {
+        setStatus("failed");
+        setMessage(recognized.error ?? "图片已保存，但文字识别暂时不可用。");
+      } else {
+        setStatus("ready");
+        setMessage("识别完成，请核对后再提交。");
+      }
     } catch (error) {
       setStatus("failed");
       setMessage(error instanceof Error ? error.message : "图片识别失败");

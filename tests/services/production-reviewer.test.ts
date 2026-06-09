@@ -128,6 +128,30 @@ describe("FetchModelProvider", () => {
     ]);
   });
 
+  it("reports a clear error when the provider returns non-json content", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ "content-type": "text/html" }),
+        text: vi.fn().mockResolvedValue("<!doctype html><html></html>")
+      })
+    );
+    const provider = new FetchModelProvider({
+      baseUrl: "https://provider.example/v1",
+      apiKey: "test-key",
+      model: "vision-model"
+    });
+
+    await expect(
+      provider.completeVisionText({
+        prompt: "Transcribe this image.",
+        file: new File(["fake-image"], "essay.png", { type: "image/png" })
+      })
+    ).rejects.toThrow("Model provider returned non-JSON response");
+  });
+
   it("includes provider status and response body when requests fail", async () => {
     vi.stubGlobal(
       "fetch",

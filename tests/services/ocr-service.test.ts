@@ -61,6 +61,44 @@ describe("processOcrUpload", () => {
     expect(result.normalizedText).toBe("This is a sentence.\n\nSecond paragraph.");
   });
 
+  it("keeps the uploaded image when OCR recognition fails", async () => {
+    const db = createDb();
+    const storage = {
+      save: vi.fn().mockResolvedValue("file://uploads/user-1/essay.png")
+    };
+
+    const result = await processOcrUpload({
+      db,
+      userId: "user-1",
+      purpose: "CONTENT",
+      file: imageFile,
+      storage,
+      adapter: {
+        recognize: vi.fn().mockRejectedValue(new Error("provider unavailable"))
+      }
+    });
+
+    expect(db.uploadAsset.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "user-1",
+        purpose: "CONTENT",
+        storageKey: "file://uploads/user-1/essay.png",
+        ocrStatus: "FAILED",
+        rawText: null,
+        normalizedText: null,
+        errorMessage: "provider unavailable"
+      })
+    });
+    expect(result).toEqual(
+      expect.objectContaining({
+        uploadId: "upload-1",
+        status: "FAILED",
+        normalizedText: null,
+        errorMessage: "provider unavailable"
+      })
+    );
+  });
+
   it("rejects oversized image files", async () => {
     const largeFile = new File([new Uint8Array(5 * 1024 * 1024 + 1)], "large.png", {
       type: "image/png"

@@ -71,7 +71,7 @@ export class FetchModelProvider implements ModelProvider {
       responseFormat
     });
 
-    const data = (await response.json()) as {
+    const data = (await readJsonResponse(response)) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
     const content = data.choices?.[0]?.message?.content;
@@ -164,6 +164,26 @@ async function readResponseSummary(response: Response): Promise<string> {
   const body = await response.text().catch(() => "");
 
   return body.slice(0, 500) || "empty response body";
+}
+
+async function readJsonResponse(response: Response): Promise<unknown> {
+  const contentType = response.headers?.get("content-type") ?? "";
+
+  if (contentType && !contentType.includes("application/json")) {
+    const body = await response.text().catch(() => "");
+
+    throw new Error(
+      `Model provider returned non-JSON response: ${body.slice(0, 120) || "empty response body"}`
+    );
+  }
+
+  return response.json().catch((error) => {
+    throw new Error(
+      `Model provider returned invalid JSON: ${
+        error instanceof Error ? error.message : "unknown parse error"
+      }`
+    );
+  });
 }
 
 function isTransientStatus(status: number): boolean {

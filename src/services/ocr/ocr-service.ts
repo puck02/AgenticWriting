@@ -25,6 +25,7 @@ type OcrDb = {
       id: string;
       rawText: string | null;
       normalizedText: string | null;
+      errorMessage: string | null;
       ocrStatus: string;
     }>;
   };
@@ -81,8 +82,12 @@ export async function processOcrUpload({
   validateImageFile(file);
 
   const storageKey = await storage.save({ userId, file });
-  const recognized = await adapter.recognize(file);
-  const normalizedText = normalizeOcrText(recognized.rawText);
+  const recognized = await adapter.recognize(file).catch((error) => ({
+    errorMessage: getErrorMessage(error)
+  }));
+  const recognitionFailed = "errorMessage" in recognized;
+  const rawText = recognitionFailed ? null : recognized.rawText;
+  const normalizedText = rawText ? normalizeOcrText(rawText) : null;
   const upload = await db.uploadAsset.create({
     data: {
       userId,
@@ -91,9 +96,10 @@ export async function processOcrUpload({
       mimeType: file.type,
       sizeBytes: file.size,
       storageKey,
-      ocrStatus: "READY",
-      rawText: recognized.rawText,
-      normalizedText
+      ocrStatus: recognitionFailed ? "FAILED" : "READY",
+      rawText,
+      normalizedText,
+      errorMessage: recognitionFailed ? recognized.errorMessage : null
     }
   });
 
@@ -101,7 +107,8 @@ export async function processOcrUpload({
     uploadId: upload.id,
     status: upload.ocrStatus,
     rawText: upload.rawText,
-    normalizedText: upload.normalizedText
+    normalizedText: upload.normalizedText,
+    errorMessage: upload.errorMessage
   };
 }
 
@@ -133,4 +140,8 @@ function validateImageFile(file: File) {
   if (file.size > maxUploadBytes) {
     throw new Error("Image uploads must be 5MB or smaller");
   }
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "OCR failed";
 }

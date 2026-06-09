@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       {
-        error: getErrorMessage(error)
+        error: getUploadErrorMessage(error)
       },
       { status: 400 }
     );
@@ -77,4 +77,17 @@ export async function POST(request: NextRequest) {
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : "OCR failed";
+}
+
+function getUploadErrorMessage(error: unknown) {
+  const message = getErrorMessage(error);
+
+  if (
+    message.startsWith("Model provider") ||
+    message.includes("fetch failed")
+  ) {
+    return "图片识别服务暂时不可用，请稍后重试。";
+  }
+
+  return message;
 }

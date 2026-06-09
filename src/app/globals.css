@@ -366,13 +366,6 @@ button {
   box-shadow: var(--aw-shadow-sm);
 }
 
-.coach-mode-description {
-  max-width: 34rem;
-  color: var(--aw-text-muted);
-  font-size: 0.875rem;
-  line-height: 1.6;
-}
-
 .coach-workspace-grid {
   display: grid;
   gap: 1rem;
@@ -382,8 +375,6 @@ button {
   padding: 0;
 }
 
-.coach-compose-pane,
-.coach-rail,
 .review-source-pane,
 .review-toolbar,
 .lesson-card {
@@ -397,7 +388,6 @@ button {
   display: grid;
   gap: 1rem;
   min-width: 0;
-  padding: 1rem;
 }
 
 .coach-settings-row {
@@ -495,97 +485,18 @@ button {
 }
 
 .coach-readiness {
-  display: grid;
-  gap: 0.45rem;
-  border: 1px solid var(--aw-border);
-  border-radius: var(--aw-radius-md);
-  background: var(--aw-surface);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  border-top: 1px solid var(--aw-border);
   color: var(--aw-text-muted);
-  padding: 0.85rem;
+  padding-top: 0.85rem;
   font-size: 0.875rem;
 }
 
 .coach-readiness p:first-child {
   color: var(--aw-text);
   font-weight: 600;
-}
-
-.coach-rail {
-  display: grid;
-  align-content: start;
-  gap: 0.85rem;
-  padding: 1rem;
-}
-
-.coach-rail-title {
-  margin-top: 0.25rem;
-  color: var(--aw-text);
-  font-size: 1.15rem;
-  font-weight: 700;
-}
-
-.coach-rail-copy,
-.coach-rail-card-copy,
-.coach-rail-card-note {
-  color: var(--aw-text-muted);
-  font-size: 0.875rem;
-  line-height: 1.65;
-}
-
-.coach-goal-list {
-  display: grid;
-  gap: 0.55rem;
-}
-
-.coach-goal-item {
-  display: grid;
-  grid-template-columns: 1.45rem 1fr;
-  align-items: center;
-  color: var(--aw-text-muted);
-  font-size: 0.875rem;
-}
-
-.coach-goal-item span {
-  display: inline-flex;
-  width: 1.25rem;
-  height: 1.25rem;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  background: var(--aw-surface-muted);
-  color: var(--aw-text-soft);
-  font-size: 0.75rem;
-}
-
-.coach-goal-complete {
-  color: var(--aw-text);
-}
-
-.coach-goal-complete span {
-  background: var(--aw-success-soft);
-  color: var(--aw-success);
-}
-
-.coach-rail-card {
-  border: 1px solid var(--aw-border);
-  border-radius: var(--aw-radius-md);
-  background: var(--aw-surface);
-  padding: 0.85rem;
-}
-
-.coach-rail-card-label {
-  color: var(--aw-text);
-  font-size: 0.8125rem;
-  font-weight: 650;
-}
-
-.coach-rail-card-copy {
-  margin-top: 0.35rem;
-}
-
-.coach-rail-card-note {
-  margin-top: 0.35rem;
-  font-size: 0.75rem;
 }
 
 .review-coach-workflow {
@@ -1011,8 +922,7 @@ button {
 }
 
 @media (min-width: 640px) {
-  .coach-settings-row,
-  .coach-readiness {
+  .coach-settings-row {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: end;
   }
@@ -1027,16 +937,6 @@ button {
 }
 
 @media (min-width: 1024px) {
-  .coach-workspace-grid {
-    grid-template-columns: minmax(0, 1fr) 280px;
-    align-items: start;
-  }
-
-  .coach-rail {
-    position: sticky;
-    top: 1rem;
-  }
-
   .review-coach-workflow {
     grid-template-columns: 320px minmax(0, 1fr);
     align-items: start;

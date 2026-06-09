@@ -201,6 +201,66 @@ describe("EssaySubmitForm", () => {
     );
   });
 
+  it("keeps saved upload ids when OCR fails after storing the image", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        headers: new Headers({ "content-type": "application/json" }),
+        json: vi.fn().mockResolvedValue({
+          uploadId: "upload-prompt-1",
+          status: "FAILED",
+          error: "图片已保存，但文字识别暂时不可用。"
+        })
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: vi.fn().mockResolvedValue({
+          essayId: "essay-1"
+        })
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<EssaySubmitForm />);
+
+    fireEvent.paste(screen.getByLabelText("作文题目"), {
+      clipboardData: {
+        items: [
+          {
+            type: "image/png",
+            getAsFile: () =>
+              new File(["prompt-image"], "prompt.png", { type: "image/png" })
+          }
+        ]
+      }
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("图片已保存，但文字识别暂时不可用。")
+      ).toBeTruthy();
+    });
+
+    fireEvent.change(screen.getByLabelText("作文题目"), {
+      target: { value: "Write about steady practice." }
+    });
+    fireEvent.change(screen.getByLabelText("作文正文"), {
+      target: { value: "Practice is important for every student." }
+    });
+    fireEvent.click(screen.getByRole("button", { name: "提交批改" }));
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    const [, submitInit] = fetchMock.mock.calls[1];
+    expect(JSON.parse(submitInit.body)).toEqual(
+      expect.objectContaining({
+        uploadAssetIds: ["upload-prompt-1"]
+      })
+    );
+  });
+
   it("lets users choose the review model for the submission", async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
@@ -279,47 +339,16 @@ describe("EssaySubmitForm", () => {
     );
   });
 
-  it("turns guidance mode into a private coach workspace with writing goals", () => {
+  it("keeps guidance mode focused without the auxiliary coach rail", () => {
     render(<EssaySubmitForm />);
 
     fireEvent.click(screen.getByRole("button", { name: "引导模式" }));
 
-    expect(screen.getByText("私人写作 coach")).toBeTruthy();
-    expect(screen.getByText("写作目标")).toBeTruthy();
-    expect(screen.getByText("题目任务已明确")).toBeTruthy();
-    expect(screen.getByText("正文已有完整观点")).toBeTruthy();
-    expect(screen.getByText("保留你的表达习惯")).toBeTruthy();
+    expect(screen.queryByText("私人写作 coach")).toBeNull();
+    expect(screen.queryByText("写作目标")).toBeNull();
+    expect(screen.queryByText("题目任务已明确")).toBeNull();
     expect(
       screen.getAllByText("停顿时给一句轻提示，不打断你当前思路。").length
     ).toBeGreaterThan(0);
-  });
-
-  it("shows the uploaded image count in the coach rail before submission", async () => {
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: vi.fn().mockResolvedValue({
-        uploadId: "upload-prompt-1",
-        normalizedText: "Recognized prompt text."
-      })
-    });
-    vi.stubGlobal("fetch", fetchMock);
-
-    render(<EssaySubmitForm />);
-
-    fireEvent.paste(screen.getByLabelText("作文题目"), {
-      clipboardData: {
-        items: [
-          {
-            type: "image/png",
-            getAsFile: () =>
-              new File(["prompt-image"], "prompt.png", { type: "image/png" })
-          }
-        ]
-      }
-    });
-
-    await waitFor(() => {
-      expect(screen.getByText("已保留 1 张上传图片")).toBeTruthy();
-    });
   });
 });

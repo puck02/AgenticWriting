@@ -48,7 +48,8 @@ describe("OcrUploadControl", () => {
     await waitFor(() => {
       expect(onRecognized).toHaveBeenCalledWith({
         uploadId: "upload-1",
-        normalizedText: "Recognized essay text."
+        normalizedText: "Recognized essay text.",
+        status: "READY"
       });
     });
     expect(fetchMock).toHaveBeenCalledWith(

@@ -139,8 +139,17 @@ export function EssaySubmitForm({
 
     try {
       const recognized = await uploadImageForOcr({ purpose, file });
-      setText(recognized.normalizedText);
       recordUploadAssetId(recognized.uploadId);
+
+      if (recognized.status === "FAILED") {
+        setPasteOcr({
+          status: "failed",
+          message: recognized.error ?? `${targetName}图片已保存，但文字识别暂时不可用。`
+        });
+        return;
+      }
+
+      setText(recognized.normalizedText);
       setPasteOcr({
         status: "ready",
         message: `${targetName}图片已识别，请核对后再提交。`
@@ -254,13 +263,19 @@ export function EssaySubmitForm({
   }
 
   function applyRecognizedPrompt(upload: OcrRecognizedUpload) {
-    setPrompt(upload.normalizedText);
     recordUploadAssetId(upload.uploadId);
+
+    if (upload.status === "READY") {
+      setPrompt(upload.normalizedText);
+    }
   }
 
   function applyRecognizedContent(upload: OcrRecognizedUpload) {
-    setContent(upload.normalizedText);
     recordUploadAssetId(upload.uploadId);
+
+    if (upload.status === "READY") {
+      setContent(upload.normalizedText);
+    }
   }
 
   return (
@@ -298,11 +313,6 @@ export function EssaySubmitForm({
             引导模式
           </button>
         </div>
-        <p className="coach-mode-description">
-          {writingMode === "guidance"
-            ? "边写边获得轻量提示，先保持自己的表达，再让 AI 接住停顿。"
-            : "先完整提交，再按句子进入理解、改写和迁移练习。"}
-        </p>
       </div>
 
       <fieldset disabled={isPending} className="coach-workspace-grid">
@@ -499,70 +509,8 @@ export function EssaySubmitForm({
             {isPending ? "正在批改..." : "提交批改"}
           </IslandButton>
         </section>
-
-        <aside className="coach-rail" aria-label="私人写作 coach">
-          <div>
-            <p className="coach-eyebrow">私人写作 coach</p>
-            <h2 className="coach-rail-title">写作目标</h2>
-            <p className="coach-rail-copy">
-              {writingMode === "guidance"
-                ? "当前目标是帮助你继续写下去，而不是替你重写整篇。"
-                : "当前目标是保留真实表达，再把每条建议变成可迁移的句式。"}
-            </p>
-          </div>
-
-          <div className="coach-goal-list">
-            <CoachGoal complete={hasPrompt} label="题目任务已明确" />
-            <CoachGoal complete={hasContent} label="正文已有完整观点" />
-            <CoachGoal complete label="保留你的表达习惯" />
-          </div>
-
-          <div className="coach-rail-card">
-            <p className="coach-rail-card-label">引导方式</p>
-            <p className="coach-rail-card-copy">
-              {writingMode === "guidance"
-                ? "停顿时给一句轻提示，不打断你当前思路。"
-                : "批改后按句子进入 lesson，先理解原因，再决定采纳。"}
-            </p>
-          </div>
-
-          <div className="coach-rail-card">
-            <p className="coach-rail-card-label">图片材料</p>
-            <p className="coach-rail-card-copy">
-              已保留 {uploadAssetIds.length} 张上传图片
-            </p>
-            <p className="coach-rail-card-note">
-              提交批改时会和作文一并提交。
-            </p>
-          </div>
-
-          <div className="coach-rail-card">
-            <p className="coach-rail-card-label">下一步</p>
-            <p className="coach-rail-card-copy">{getCoachNextStep({
-              hasPrompt,
-              hasContent,
-              isOcrUploading,
-              writingMode
-            })}</p>
-          </div>
-        </aside>
       </fieldset>
     </form>
-  );
-}
-
-function CoachGoal({
-  complete,
-  label
-}: {
-  complete: boolean;
-  label: string;
-}) {
-  return (
-    <div className={["coach-goal-item", complete ? "coach-goal-complete" : ""].join(" ")}>
-      <span aria-hidden="true">{complete ? "✓" : "•"}</span>
-      <p>{label}</p>
-    </div>
   );
 }
 
@@ -620,36 +568,6 @@ function getReadinessMessage({
   }
 
   return "可以提交，批改会同时更新你的写作画像。";
-}
-
-function getCoachNextStep({
-  hasPrompt,
-  hasContent,
-  isOcrUploading,
-  writingMode
-}: {
-  hasPrompt: boolean;
-  hasContent: boolean;
-  isOcrUploading: boolean;
-  writingMode: WritingMode;
-}) {
-  if (isOcrUploading) {
-    return "等图片识别完成，再核对题目和正文。";
-  }
-
-  if (!hasPrompt) {
-    return "先补全题目，coach 才能判断任务要求。";
-  }
-
-  if (!hasContent) {
-    return writingMode === "guidance"
-      ? "写下第一句，停顿后会出现 hint。"
-      : "保留原始正文，不要先手动润色。";
-  }
-
-  return writingMode === "guidance"
-    ? "继续写，卡住时只采纳适合你语气的 hint。"
-    : "提交后进入逐句 lesson。";
 }
 
 function countEnglishWords(text: string) {
