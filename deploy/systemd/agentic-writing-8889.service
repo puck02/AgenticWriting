@@ -1,0 +1,14 @@
+[Unit]
+Description=Agentic Writing production server on port 8889
+
+[Service]
+WorkingDirectory=/home/admin/workspace/AgenticWriting/.worktrees/agentic-writing-mvp
+Environment=NODE_ENV=production
+Environment=NEXT_TELEMETRY_DISABLED=1
+Environment="NODE_OPTIONS=--max-old-space-size=512 --use-env-proxy"
+ExecStart=/usr/bin/npm run start -- -H 0.0.0.0 -p 8889
+Restart=always
+RestartSec=3s
+
+[Install]
+WantedBy=default.target
